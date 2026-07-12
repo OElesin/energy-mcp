@@ -562,6 +562,11 @@
                     <p>Current and upcoming hourly EPEX Spot electricity prices for Germany.</p>
                 </div>
                 <div class="tool-card">
+                    <div class="tool-card-icon">🔮</div>
+                    <h3>get_price_forecast</h3>
+                    <p>Tomorrow's day-ahead hourly prices. Published daily at 14:00 CET.</p>
+                </div>
+                <div class="tool-card">
                     <div class="tool-card-icon">📈</div>
                     <h3>get_price_stats</h3>
                     <p>Average, min, max, cheapest and most expensive hours.</p>
@@ -570,6 +575,21 @@
                     <div class="tool-card-icon">⚡</div>
                     <h3>find_cheapest_window</h3>
                     <p>Find the optimal time to run an appliance — EV charging, dishwasher, heat pump.</p>
+                </div>
+                <div class="tool-card">
+                    <div class="tool-card-icon">⚖️</div>
+                    <h3>compare_tariffs</h3>
+                    <p>Dynamic vs fixed tariff simulation for a German household.</p>
+                </div>
+                <div class="tool-card">
+                    <div class="tool-card-icon">💰</div>
+                    <h3>calculate_energy_cost</h3>
+                    <p>What X kWh costs at current spot prices, with week-over-week comparison.</p>
+                </div>
+                <div class="tool-card">
+                    <div class="tool-card-icon">📉</div>
+                    <h3>analyze_price_trends</h3>
+                    <p>Weekly averages, volatility, daily breakdowns, and trend direction.</p>
                 </div>
             </div>
             <p class="data-note fade-in">Data source: EPEX Spot via aWATTar • Updated hourly at 14:00 CET with next-day prices</p>
@@ -594,16 +614,23 @@
                     <div class="playground-controls">
                         <select class="playground-select" id="toolSelect">
                             <option value="get_spot_prices">get_spot_prices</option>
+                            <option value="get_price_forecast">get_price_forecast</option>
                             <option value="get_price_stats">get_price_stats</option>
                             <option value="find_cheapest_window">find_cheapest_window</option>
+                            <option value="compare_tariffs">compare_tariffs</option>
+                            <option value="calculate_energy_cost">calculate_energy_cost</option>
+                            <option value="analyze_price_trends">analyze_price_trends</option>
                         </select>
                         <input type="text" class="playground-input" id="toolInput" placeholder="hours_ahead (e.g. 24)">
                         <button class="playground-run" id="runBtn" onclick="runTool()">Run ▶</button>
                     </div>
                     <div class="example-buttons">
                         <button class="example-btn" onclick="setExample('spot')">Today's prices</button>
-                        <button class="example-btn" onclick="setExample('stats')">Price statistics</button>
+                        <button class="example-btn" onclick="setExample('forecast')">Tomorrow's forecast</button>
                         <button class="example-btn" onclick="setExample('cheapest')">⚡ Best EV charging window</button>
+                        <button class="example-btn" onclick="setExample('tariff')">⚖️ Dynamic vs fixed</button>
+                        <button class="example-btn" onclick="setExample('cost')">💰 Cost of 50 kWh</button>
+                        <button class="example-btn" onclick="setExample('trends')">📉 Weekly trends</button>
                     </div>
                     <div class="playground-output" id="output"><span class="placeholder">← Select a tool and hit Run to call the live MCP endpoint</span></div>
                 </div>
@@ -686,6 +713,22 @@
             toolSelect.value = 'find_cheapest_window';
             toolInput.value = '3,11';
             toolInput.placeholder = placeholders.find_cheapest_window;
+        } else if (type === 'forecast') {
+            toolSelect.value = 'get_price_forecast';
+            toolInput.value = '';
+            toolInput.placeholder = 'No input needed';
+        } else if (type === 'tariff') {
+            toolSelect.value = 'compare_tariffs';
+            toolInput.value = '300,32';
+            toolInput.placeholder = 'kwh,fixed_rate (e.g. 300,32)';
+        } else if (type === 'cost') {
+            toolSelect.value = 'calculate_energy_cost';
+            toolInput.value = '50';
+            toolInput.placeholder = 'kWh (e.g. 50)';
+        } else if (type === 'trends') {
+            toolSelect.value = 'analyze_price_trends';
+            toolInput.value = '';
+            toolInput.placeholder = 'No input needed';
         }
         runTool();
     }
@@ -697,6 +740,8 @@
             return { hours_ahead: hours };
         } else if (tool === 'get_price_stats') {
             return {};
+        } else if (tool === 'get_price_forecast') {
+            return {};
         } else if (tool === 'find_cheapest_window') {
             if (val.includes(',')) {
                 const parts = val.split(',');
@@ -705,6 +750,16 @@
                 const num = parseInt(val) || 3;
                 return { duration_hours: num, consumption_kwh: 1 };
             }
+        } else if (tool === 'compare_tariffs') {
+            if (val.includes(',')) {
+                const parts = val.split(',');
+                return { consumption_kwh: parseFloat(parts[0]) || 300, fixed_rate_ct_kwh: parseFloat(parts[1]) || 32 };
+            }
+            return { consumption_kwh: parseFloat(val) || 300 };
+        } else if (tool === 'calculate_energy_cost') {
+            return { consumption_kwh: parseFloat(val) || 1, compare_last_week: true };
+        } else if (tool === 'analyze_price_trends') {
+            return {};
         }
         return {};
     }
