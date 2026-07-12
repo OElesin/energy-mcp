@@ -815,27 +815,39 @@
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Accept': 'application/json'
+                    'Accept': 'application/json, text/event-stream'
                 },
                 body: JSON.stringify(payload)
             });
 
-            const data = await res.json();
+            const text = await res.text();
+            const dataLine = text.split('\n').find(l => l.startsWith('data: '));
+            if (!dataLine) {
+                output.innerHTML = '<span style="color:#f87171;">Unexpected response format</span>';
+                return;
+            }
+            const data = JSON.parse(dataLine.slice(6));
 
             if (data.error) {
                 output.innerHTML = '<span style="color:#f87171;">Error: ' + (data.error.message || JSON.stringify(data.error)) + '</span>';
             } else {
                 const result = data.result || data;
+                let content = result;
+
+                // Extract text content from MCP tool response
+                if (result.content && result.content[0] && result.content[0].text) {
+                    try { content = JSON.parse(result.content[0].text); } catch(e) { content = result.content[0].text; }
+                }
 
                 if (tool === 'find_cheapest_window') {
-                    const cards = renderCheapestWindow(result);
+                    const cards = renderCheapestWindow({ content: [{ text: JSON.stringify(content) }] });
                     if (cards) {
-                        output.innerHTML = cards + '<pre style="margin-top:12px;font-size:0.75rem;color:#94a3b8;">' + JSON.stringify(result, null, 2) + '</pre>';
+                        output.innerHTML = cards + '<pre style="margin-top:12px;font-size:0.75rem;color:#94a3b8;">' + JSON.stringify(content, null, 2) + '</pre>';
                     } else {
-                        output.textContent = JSON.stringify(result, null, 2);
+                        output.textContent = JSON.stringify(content, null, 2);
                     }
                 } else {
-                    output.textContent = JSON.stringify(result, null, 2);
+                    output.textContent = JSON.stringify(content, null, 2);
                 }
             }
         } catch (err) {
