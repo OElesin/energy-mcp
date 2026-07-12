@@ -70,8 +70,12 @@ async fn route_request(request: JsonRpcRequest) -> JsonRpcResponse {
 
             let result = match tool_name {
                 "get_spot_prices" => tools::spot_prices::execute(&arguments).await,
+                "get_price_forecast" => tools::price_forecast::execute(&arguments).await,
                 "get_price_stats" => tools::price_stats::execute(&arguments).await,
                 "find_cheapest_window" => tools::cheapest_window::execute(&arguments).await,
+                "compare_tariffs" => tools::compare_tariffs::execute(&arguments).await,
+                "calculate_energy_cost" => tools::energy_cost::execute(&arguments).await,
+                "analyze_price_trends" => tools::price_trends::execute(&arguments).await,
                 _ => mcp::ToolCallResult::error(format!("Unknown tool: {}", tool_name)),
             };
 

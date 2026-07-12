@@ -1,6 +1,10 @@
 pub mod spot_prices;
 pub mod cheapest_window;
 pub mod price_stats;
+pub mod price_forecast;
+pub mod compare_tariffs;
+pub mod energy_cost;
+pub mod price_trends;
 
 use serde_json::{json, Value};
 use crate::mcp::ToolDef;
@@ -20,6 +24,14 @@ pub fn list_tools() -> Vec<ToolDef> {
                         "default": 48
                     }
                 }
+            }),
+        },
+        ToolDef {
+            name: "get_price_forecast".into(),
+            description: "Get day-ahead hourly electricity prices for tomorrow (EPEX Spot via aWATTar). Prices are published daily at 14:00 CET.".into(),
+            input_schema: json!({
+                "type": "object",
+                "properties": {}
             }),
         },
         ToolDef {
@@ -47,6 +59,57 @@ pub fn list_tools() -> Vec<ToolDef> {
                     }
                 },
                 "required": ["duration_hours"]
+            }),
+        },
+        ToolDef {
+            name: "compare_tariffs".into(),
+            description: "Compare dynamic (spot-based) vs fixed electricity tariff for a German household. Shows which saves more money based on current market prices.".into(),
+            input_schema: json!({
+                "type": "object",
+                "properties": {
+                    "consumption_kwh": {
+                        "type": "number",
+                        "description": "Monthly electricity consumption in kWh (default: 300, German average).",
+                        "default": 300.0
+                    },
+                    "fixed_rate_ct_kwh": {
+                        "type": "number",
+                        "description": "Your current fixed tariff rate in ct/kWh (default: 32).",
+                        "default": 32.0
+                    },
+                    "dynamic_surcharge_ct_kwh": {
+                        "type": "number",
+                        "description": "Surcharges on top of spot price for dynamic tariff in ct/kWh — grid fees, taxes, levies (default: 20).",
+                        "default": 20.0
+                    }
+                }
+            }),
+        },
+        ToolDef {
+            name: "calculate_energy_cost".into(),
+            description: "Calculate what X kWh costs at current spot prices, with comparison to last week. Useful for understanding your real-time energy costs.".into(),
+            input_schema: json!({
+                "type": "object",
+                "properties": {
+                    "consumption_kwh": {
+                        "type": "number",
+                        "description": "Energy consumption to price in kWh (default: 1.0).",
+                        "default": 1.0
+                    },
+                    "compare_last_week": {
+                        "type": "boolean",
+                        "description": "Include comparison with same day last week (default: true).",
+                        "default": true
+                    }
+                }
+            }),
+        },
+        ToolDef {
+            name: "analyze_price_trends".into(),
+            description: "Analyze weekly electricity price trends — current week vs prior week averages, volatility, daily breakdowns, and week-over-week direction.".into(),
+            input_schema: json!({
+                "type": "object",
+                "properties": {}
             }),
         },
     ]
