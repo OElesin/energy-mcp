@@ -1,0 +1,805 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Energy MCP Server — European energy prices for AI agents</title>
+    <meta name="description" content="Real-time German electricity spot prices, cheapest charging windows, and price statistics. One MCP endpoint, near-zero latency.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        :root {
+            --bg: #ffffff;
+            --surface: #f8fafc;
+            --surface-border: #e2e8f0;
+            --text: #0f172a;
+            --text-secondary: #475569;
+            --text-tertiary: #64748b;
+            --accent: #059669;
+            --accent-light: #d1fae5;
+            --accent-hover: #047857;
+            --code-bg: #1e293b;
+            --code-text: #e2e8f0;
+            --shadow-sm: 0 1px 2px rgba(0,0,0,0.05);
+            --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.07), 0 2px 4px -2px rgba(0,0,0,0.05);
+            --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.08), 0 4px 6px -4px rgba(0,0,0,0.04);
+            --shadow-xl: 0 20px 25px -5px rgba(0,0,0,0.08), 0 8px 10px -6px rgba(0,0,0,0.04);
+            --radius: 14px;
+            --radius-sm: 8px;
+            --transition: 0.2s ease;
+        }
+
+        [data-theme="dark"] {
+            --bg: #0f172a;
+            --surface: #1e293b;
+            --surface-border: #334155;
+            --text: #f1f5f9;
+            --text-secondary: #94a3b8;
+            --text-tertiary: #64748b;
+            --accent: #34d399;
+            --accent-light: #064e3b;
+            --accent-hover: #6ee7b7;
+            --code-bg: #0f172a;
+            --code-text: #e2e8f0;
+            --shadow-sm: 0 1px 2px rgba(0,0,0,0.3);
+            --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.4), 0 2px 4px -2px rgba(0,0,0,0.3);
+            --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.4), 0 4px 6px -4px rgba(0,0,0,0.3);
+            --shadow-xl: 0 20px 25px -5px rgba(0,0,0,0.5), 0 8px 10px -6px rgba(0,0,0,0.4);
+        }
+
+        html { scroll-behavior: smooth; }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+            transition: background var(--transition), color var(--transition);
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 0 24px;
+        }
+
+        /* Nav */
+        nav {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 100;
+            background: rgba(255,255,255,0.85);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--surface-border);
+            transition: background var(--transition), border-color var(--transition);
+        }
+
+        [data-theme="dark"] nav {
+            background: rgba(15,23,42,0.85);
+        }
+
+        nav .container {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            height: 64px;
+        }
+
+        .nav-brand {
+            font-weight: 700;
+            font-size: 1.1rem;
+            color: var(--text);
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .nav-brand span { font-size: 1.3rem; }
+
+        .theme-toggle {
+            background: var(--surface);
+            border: 1px solid var(--surface-border);
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all var(--transition);
+            font-size: 1.1rem;
+        }
+
+        .theme-toggle:hover {
+            background: var(--accent-light);
+            border-color: var(--accent);
+        }
+
+        /* Hero */
+        .hero {
+            padding: 140px 0 80px;
+            text-align: center;
+        }
+
+        .hero-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 14px;
+            background: var(--accent-light);
+            color: var(--accent);
+            border-radius: 100px;
+            font-size: 0.82rem;
+            font-weight: 600;
+            margin-bottom: 24px;
+            border: 1px solid var(--accent);
+            letter-spacing: -0.01em;
+        }
+
+        .hero h1 {
+            font-size: clamp(2.2rem, 5vw, 3.5rem);
+            font-weight: 800;
+            letter-spacing: -0.03em;
+            line-height: 1.1;
+            margin-bottom: 16px;
+            background: linear-gradient(135deg, var(--text) 0%, var(--text-secondary) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .hero p {
+            font-size: clamp(1rem, 2vw, 1.2rem);
+            color: var(--text-secondary);
+            max-width: 600px;
+            margin: 0 auto 40px;
+            line-height: 1.7;
+        }
+
+        /* Config block */
+        .config-block {
+            background: var(--code-bg);
+            border-radius: var(--radius);
+            padding: 20px 24px;
+            max-width: 560px;
+            margin: 0 auto;
+            position: relative;
+            text-align: left;
+            box-shadow: var(--shadow-xl);
+        }
+
+        .config-block pre {
+            font-family: 'SF Mono', 'Fira Code', monospace;
+            font-size: 0.82rem;
+            color: var(--code-text);
+            overflow-x: auto;
+            white-space: pre;
+            line-height: 1.7;
+        }
+
+        .config-block .key { color: #7dd3fc; }
+        .config-block .string { color: #86efac; }
+        .config-block .bracket { color: #94a3b8; }
+
+        .copy-btn {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            background: #334155;
+            border: 1px solid #475569;
+            color: #e2e8f0;
+            border-radius: var(--radius-sm);
+            padding: 6px 12px;
+            font-size: 0.75rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all var(--transition);
+            font-family: 'Inter', sans-serif;
+        }
+
+        .copy-btn:hover { background: #475569; }
+        .copy-btn.copied { background: var(--accent); color: white; border-color: var(--accent); }
+
+        /* Tools section */
+        .section {
+            padding: 80px 0;
+        }
+
+        .section-title {
+            font-size: 1.8rem;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+            text-align: center;
+            margin-bottom: 12px;
+        }
+
+        .section-subtitle {
+            text-align: center;
+            color: var(--text-secondary);
+            margin-bottom: 48px;
+            font-size: 1.05rem;
+        }
+
+        .tools-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 24px;
+        }
+
+        .tool-card {
+            background: var(--surface);
+            border: 1px solid var(--surface-border);
+            border-radius: var(--radius);
+            padding: 28px;
+            transition: all var(--transition);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .tool-card:hover {
+            box-shadow: var(--shadow-lg);
+            transform: translateY(-2px);
+            border-color: var(--accent);
+        }
+
+        .tool-card-icon {
+            width: 44px;
+            height: 44px;
+            background: var(--accent-light);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.3rem;
+            margin-bottom: 16px;
+        }
+
+        .tool-card h3 {
+            font-size: 1rem;
+            font-weight: 600;
+            margin-bottom: 8px;
+            font-family: 'SF Mono', 'Fira Code', monospace;
+            color: var(--accent);
+        }
+
+        .tool-card p {
+            color: var(--text-secondary);
+            font-size: 0.92rem;
+            line-height: 1.6;
+        }
+
+        .data-note {
+            text-align: center;
+            font-size: 0.82rem;
+            color: var(--text-tertiary);
+            margin-top: 8px;
+        }
+
+        /* Playground */
+        .playground-window {
+            background: var(--surface);
+            border: 1px solid var(--surface-border);
+            border-radius: var(--radius);
+            overflow: hidden;
+            box-shadow: var(--shadow-xl);
+            max-width: 700px;
+            margin: 0 auto;
+        }
+
+        .window-chrome {
+            background: var(--surface);
+            border-bottom: 1px solid var(--surface-border);
+            padding: 12px 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .window-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+
+        .window-dot.red { background: #ef4444; }
+        .window-dot.yellow { background: #eab308; }
+        .window-dot.green { background: #22c55e; }
+
+        .window-title {
+            flex: 1;
+            text-align: center;
+            font-size: 0.8rem;
+            color: var(--text-tertiary);
+            font-weight: 500;
+        }
+
+        .playground-body {
+            padding: 24px;
+        }
+
+        .playground-controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+        }
+
+        .playground-select {
+            flex: 1;
+            min-width: 180px;
+            padding: 10px 14px;
+            border-radius: var(--radius-sm);
+            border: 1px solid var(--surface-border);
+            background: var(--bg);
+            color: var(--text);
+            font-family: 'Inter', sans-serif;
+            font-size: 0.88rem;
+            cursor: pointer;
+            transition: border-color var(--transition);
+        }
+
+        .playground-select:focus { outline: none; border-color: var(--accent); }
+
+        .playground-input {
+            flex: 2;
+            padding: 10px 14px;
+            border-radius: var(--radius-sm);
+            border: 1px solid var(--surface-border);
+            background: var(--bg);
+            color: var(--text);
+            font-family: 'Inter', sans-serif;
+            font-size: 0.88rem;
+            transition: border-color var(--transition);
+        }
+
+        .playground-input:focus { outline: none; border-color: var(--accent); }
+
+        .playground-run {
+            padding: 10px 20px;
+            background: var(--accent);
+            color: white;
+            border: none;
+            border-radius: var(--radius-sm);
+            font-weight: 600;
+            font-size: 0.88rem;
+            cursor: pointer;
+            transition: all var(--transition);
+            font-family: 'Inter', sans-serif;
+            white-space: nowrap;
+        }
+
+        .playground-run:hover { background: var(--accent-hover); transform: scale(1.02); }
+        .playground-run:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+
+        .example-buttons {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+        }
+
+        .example-btn {
+            padding: 6px 12px;
+            background: var(--bg);
+            border: 1px solid var(--surface-border);
+            border-radius: 100px;
+            font-size: 0.78rem;
+            font-weight: 500;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all var(--transition);
+            font-family: 'Inter', sans-serif;
+        }
+
+        .example-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+        .playground-output {
+            background: var(--code-bg);
+            border-radius: var(--radius-sm);
+            padding: 16px;
+            min-height: 120px;
+            max-height: 400px;
+            overflow-y: auto;
+            font-family: 'SF Mono', 'Fira Code', monospace;
+            font-size: 0.8rem;
+            color: var(--code-text);
+            line-height: 1.6;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+
+        .playground-output .placeholder {
+            color: #64748b;
+            font-style: italic;
+        }
+
+        /* Stat cards for cheapest window */
+        .stat-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+
+        .stat-card {
+            background: #1e293b;
+            border: 1px solid #334155;
+            border-radius: var(--radius-sm);
+            padding: 14px;
+            text-align: center;
+        }
+
+        .stat-card .stat-label {
+            font-size: 0.7rem;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 4px;
+        }
+
+        .stat-card .stat-value {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: #34d399;
+        }
+
+        /* Footer */
+        footer {
+            border-top: 1px solid var(--surface-border);
+            padding: 40px 0;
+            text-align: center;
+        }
+
+        .footer-links {
+            display: flex;
+            justify-content: center;
+            gap: 24px;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+        }
+
+        .footer-links a {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 0.88rem;
+            font-weight: 500;
+            transition: color var(--transition);
+        }
+
+        .footer-links a:hover { color: var(--accent); }
+
+        .footer-copy {
+            color: var(--text-tertiary);
+            font-size: 0.8rem;
+        }
+
+        /* Animations */
+        .fade-in {
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity 0.6s ease, transform 0.6s ease;
+        }
+
+        .fade-in.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* Loading spinner */
+        .spinner {
+            display: inline-block;
+            width: 14px;
+            height: 14px;
+            border: 2px solid rgba(255,255,255,0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 0.6s linear infinite;
+            margin-right: 6px;
+            vertical-align: middle;
+        }
+
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* Mobile */
+        @media (max-width: 640px) {
+            .hero { padding: 120px 0 60px; }
+            .playground-controls { flex-direction: column; }
+            .tools-grid { grid-template-columns: 1fr; }
+            .config-block { padding: 16px; }
+            .config-block pre { font-size: 0.72rem; }
+            .stat-cards { grid-template-columns: repeat(2, 1fr); }
+        }
+    </style>
+</head>
+<body>
+    <!-- Nav -->
+    <nav>
+        <div class="container">
+            <a href="#" class="nav-brand"><span>⚡</span> Energy MCP</a>
+            <button class="theme-toggle" id="themeToggle" aria-label="Toggle dark mode">☀️</button>
+        </div>
+    </nav>
+
+    <!-- Hero -->
+    <section class="hero">
+        <div class="container">
+            <div class="fade-in">
+                <div class="hero-badge">⚡ Rust • ~10ms cold start</div>
+                <h1>European energy prices<br>for AI agents</h1>
+                <p>Real-time German electricity spot prices, cheapest charging windows, and price statistics. One endpoint, near-zero latency.</p>
+            </div>
+            <div class="fade-in config-block">
+                <button class="copy-btn" id="copyBtn" onclick="copyConfig()">Copy</button>
+                <pre><span class="bracket">{</span>
+  <span class="key">"mcpServers"</span><span class="bracket">:</span> <span class="bracket">{</span>
+    <span class="key">"energy"</span><span class="bracket">:</span> <span class="bracket">{</span>
+      <span class="key">"url"</span><span class="bracket">:</span> <span class="string">"https://energy-mcp.getbrechtai.com/mcp"</span>
+    <span class="bracket">}</span>
+  <span class="bracket">}</span>
+<span class="bracket">}</span></pre>
+            </div>
+        </div>
+    </section>
+
+    <!-- Tools -->
+    <section class="section" id="tools">
+        <div class="container">
+            <div class="fade-in">
+                <h2 class="section-title">Three tools, one endpoint</h2>
+                <p class="section-subtitle">Everything your agent needs for energy-aware decisions.</p>
+            </div>
+            <div class="tools-grid fade-in">
+                <div class="tool-card">
+                    <div class="tool-card-icon">📊</div>
+                    <h3>get_spot_prices</h3>
+                    <p>Current and upcoming hourly EPEX Spot electricity prices for Germany.</p>
+                </div>
+                <div class="tool-card">
+                    <div class="tool-card-icon">📈</div>
+                    <h3>get_price_stats</h3>
+                    <p>Average, min, max, cheapest and most expensive hours.</p>
+                </div>
+                <div class="tool-card">
+                    <div class="tool-card-icon">⚡</div>
+                    <h3>find_cheapest_window</h3>
+                    <p>Find the optimal time to run an appliance — EV charging, dishwasher, heat pump.</p>
+                </div>
+            </div>
+            <p class="data-note fade-in">Data source: EPEX Spot via aWATTar • Updated hourly at 14:00 CET with next-day prices</p>
+        </div>
+    </section>
+
+    <!-- Playground -->
+    <section class="section" id="playground">
+        <div class="container">
+            <div class="fade-in">
+                <h2 class="section-title">Try it live</h2>
+                <p class="section-subtitle">Hit the real endpoint — no API key required.</p>
+            </div>
+            <div class="playground-window fade-in">
+                <div class="window-chrome">
+                    <div class="window-dot red"></div>
+                    <div class="window-dot yellow"></div>
+                    <div class="window-dot green"></div>
+                    <span class="window-title">energy-mcp playground</span>
+                </div>
+                <div class="playground-body">
+                    <div class="playground-controls">
+                        <select class="playground-select" id="toolSelect">
+                            <option value="get_spot_prices">get_spot_prices</option>
+                            <option value="get_price_stats">get_price_stats</option>
+                            <option value="find_cheapest_window">find_cheapest_window</option>
+                        </select>
+                        <input type="text" class="playground-input" id="toolInput" placeholder="hours_ahead (e.g. 24)">
+                        <button class="playground-run" id="runBtn" onclick="runTool()">Run ▶</button>
+                    </div>
+                    <div class="example-buttons">
+                        <button class="example-btn" onclick="setExample('spot')">Today's prices</button>
+                        <button class="example-btn" onclick="setExample('stats')">Price statistics</button>
+                        <button class="example-btn" onclick="setExample('cheapest')">⚡ Best EV charging window</button>
+                    </div>
+                    <div class="playground-output" id="output"><span class="placeholder">← Select a tool and hit Run to call the live MCP endpoint</span></div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+        <div class="container">
+            <div class="footer-links">
+                <a href="https://github.com/OElesin/energy-mcp" target="_blank" rel="noopener">GitHub</a>
+                <a href="https://linkedin.com/in/olaleaborede" target="_blank" rel="noopener">LinkedIn</a>
+                <a href="https://www.awattar.de" target="_blank" rel="noopener">aWATTar</a>
+            </div>
+            <p class="footer-copy">Built with Rust & Lambda. Open source.</p>
+        </div>
+    </footer>
+
+    <script>
+    // Theme toggle
+    const toggle = document.getElementById('themeToggle');
+    const savedTheme = localStorage.getItem('theme');
+    if (savedTheme === 'dark') {
+        document.documentElement.setAttribute('data-theme', 'dark');
+        toggle.textContent = '🌙';
+    }
+
+    toggle.addEventListener('click', () => {
+        const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+        if (isDark) {
+            document.documentElement.removeAttribute('data-theme');
+            localStorage.setItem('theme', 'light');
+            toggle.textContent = '☀️';
+        } else {
+            document.documentElement.setAttribute('data-theme', 'dark');
+            localStorage.setItem('theme', 'dark');
+            toggle.textContent = '🌙';
+        }
+    });
+
+    // Copy config
+    function copyConfig() {
+        const config = JSON.stringify({"mcpServers":{"energy":{"url":"https://energy-mcp.getbrechtai.com/mcp"}}}, null, 2);
+        navigator.clipboard.writeText(config).then(() => {
+            const btn = document.getElementById('copyBtn');
+            btn.textContent = 'Copied!';
+            btn.classList.add('copied');
+            setTimeout(() => { btn.textContent = 'Copy'; btn.classList.remove('copied'); }, 2000);
+        });
+    }
+
+    // Playground
+    const toolSelect = document.getElementById('toolSelect');
+    const toolInput = document.getElementById('toolInput');
+    const output = document.getElementById('output');
+    const runBtn = document.getElementById('runBtn');
+
+    const placeholders = {
+        get_spot_prices: 'hours_ahead (e.g. 24)',
+        get_price_stats: 'No arguments needed',
+        find_cheapest_window: 'hours,kwh (e.g. 3,11)'
+    };
+
+    toolSelect.addEventListener('change', () => {
+        toolInput.placeholder = placeholders[toolSelect.value];
+        toolInput.value = '';
+    });
+
+    function setExample(type) {
+        if (type === 'spot') {
+            toolSelect.value = 'get_spot_prices';
+            toolInput.value = '24';
+            toolInput.placeholder = placeholders.get_spot_prices;
+        } else if (type === 'stats') {
+            toolSelect.value = 'get_price_stats';
+            toolInput.value = '';
+            toolInput.placeholder = placeholders.get_price_stats;
+        } else if (type === 'cheapest') {
+            toolSelect.value = 'find_cheapest_window';
+            toolInput.value = '3,11';
+            toolInput.placeholder = placeholders.find_cheapest_window;
+        }
+        runTool();
+    }
+
+    function buildArgs(tool, input) {
+        const val = input.trim();
+        if (tool === 'get_spot_prices') {
+            const hours = parseInt(val) || 24;
+            return { hours_ahead: hours };
+        } else if (tool === 'get_price_stats') {
+            return {};
+        } else if (tool === 'find_cheapest_window') {
+            if (val.includes(',')) {
+                const parts = val.split(',');
+                return { duration_hours: parseInt(parts[0]) || 3, consumption_kwh: parseFloat(parts[1]) || 1 };
+            } else {
+                const num = parseInt(val) || 3;
+                return { duration_hours: num, consumption_kwh: 1 };
+            }
+        }
+        return {};
+    }
+
+    function renderCheapestWindow(result) {
+        const data = result.content ? result.content[0] : result;
+        let parsed = data;
+        if (typeof data === 'string') {
+            try { parsed = JSON.parse(data); } catch(e) { return null; }
+        }
+        if (data.text) {
+            try { parsed = JSON.parse(data.text); } catch(e) { return null; }
+        }
+
+        if (!parsed.window_start && !parsed.start && !parsed.optimal_start) return null;
+
+        const start = parsed.window_start || parsed.start || parsed.optimal_start || 'N/A';
+        const end = parsed.window_end || parsed.end || parsed.optimal_end || 'N/A';
+        const avgPrice = parsed.average_price_eur_per_kwh || parsed.avg_price || parsed.average_price || 'N/A';
+        const totalCost = parsed.total_cost_eur || parsed.total_cost || parsed.cost || 'N/A';
+        const duration = parsed.duration_hours || parsed.duration || 'N/A';
+
+        const formatTime = (t) => {
+            try { return new Date(t).toLocaleTimeString('en-GB', {hour:'2-digit', minute:'2-digit'}); }
+            catch(e) { return t; }
+        };
+
+        let html = '<div class="stat-cards">';
+        html += `<div class="stat-card"><div class="stat-label">Best Window</div><div class="stat-value">${formatTime(start)} – ${formatTime(end)}</div></div>`;
+        html += `<div class="stat-card"><div class="stat-label">Avg Price</div><div class="stat-value">${typeof avgPrice === 'number' ? avgPrice.toFixed(4) + ' €/kWh' : avgPrice}</div></div>`;
+        html += `<div class="stat-card"><div class="stat-label">Total Cost</div><div class="stat-value">${typeof totalCost === 'number' ? totalCost.toFixed(4) + ' €' : totalCost}</div></div>`;
+        html += `<div class="stat-card"><div class="stat-label">Duration</div><div class="stat-value">${duration}h</div></div>`;
+        html += '</div>';
+        return html;
+    }
+
+    async function runTool() {
+        const tool = toolSelect.value;
+        const args = buildArgs(tool, toolInput.value);
+
+        output.innerHTML = '<span class="spinner"></span> Calling endpoint...';
+        runBtn.disabled = true;
+
+        const payload = {
+            jsonrpc: '2.0',
+            id: 1,
+            method: 'tools/call',
+            params: { name: tool, arguments: args }
+        };
+
+        try {
+            const res = await fetch('https://energy-mcp.getbrechtai.com/mcp', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify(payload)
+            });
+
+            const data = await res.json();
+
+            if (data.error) {
+                output.innerHTML = '<span style="color:#f87171;">Error: ' + (data.error.message || JSON.stringify(data.error)) + '</span>';
+            } else {
+                const result = data.result || data;
+
+                if (tool === 'find_cheapest_window') {
+                    const cards = renderCheapestWindow(result);
+                    if (cards) {
+                        output.innerHTML = cards + '<pre style="margin-top:12px;font-size:0.75rem;color:#94a3b8;">' + JSON.stringify(result, null, 2) + '</pre>';
+                    } else {
+                        output.textContent = JSON.stringify(result, null, 2);
+                    }
+                } else {
+                    output.textContent = JSON.stringify(result, null, 2);
+                }
+            }
+        } catch (err) {
+            output.innerHTML = '<span style="color:#f87171;">Network error: ' + err.message + '</span>';
+        } finally {
+            runBtn.disabled = false;
+        }
+    }
+
+    // Scroll animations
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                entry.target.classList.add('visible');
+            }
+        });
+    }, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
+
+    document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
+    </script>
+</body>
+</html>
