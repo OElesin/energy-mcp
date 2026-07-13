@@ -591,6 +591,21 @@
                     <h3>analyze_price_trends</h3>
                     <p>Weekly averages, volatility, daily breakdowns, and trend direction.</p>
                 </div>
+                <div class="tool-card">
+                    <div class="tool-card-icon">🌍</div>
+                    <h3>search_energy_prices</h3>
+                    <p>Spot prices for 25+ European countries — any bidding zone, any date.</p>
+                </div>
+                <div class="tool-card">
+                    <div class="tool-card-icon">🔋</div>
+                    <h3>get_generation_mix</h3>
+                    <p>Real-time power generation by source — solar, wind, gas, nuclear, coal.</p>
+                </div>
+                <div class="tool-card">
+                    <div class="tool-card-icon">🌱</div>
+                    <h3>get_carbon_intensity</h3>
+                    <p>gCO2/kWh for any European country, derived from live generation mix.</p>
+                </div>
             </div>
             <p class="data-note fade-in">Data source: EPEX Spot via aWATTar • Updated hourly at 14:00 CET with next-day prices</p>
         </div>
@@ -620,6 +635,9 @@
                             <option value="compare_tariffs">compare_tariffs</option>
                             <option value="calculate_energy_cost">calculate_energy_cost</option>
                             <option value="analyze_price_trends">analyze_price_trends</option>
+                            <option value="search_energy_prices">search_energy_prices</option>
+                            <option value="get_generation_mix">get_generation_mix</option>
+                            <option value="get_carbon_intensity">get_carbon_intensity</option>
                         </select>
                         <input type="text" class="playground-input" id="toolInput" placeholder="hours_ahead (e.g. 24)">
                         <button class="playground-run" id="runBtn" onclick="runTool()">Run ▶</button>
@@ -631,6 +649,9 @@
                         <button class="example-btn" onclick="setExample('tariff')">⚖️ Dynamic vs fixed</button>
                         <button class="example-btn" onclick="setExample('cost')">💰 Cost of 50 kWh</button>
                         <button class="example-btn" onclick="setExample('trends')">📉 Weekly trends</button>
+                        <button class="example-btn" onclick="setExample('eu_prices')">🌍 France prices</button>
+                        <button class="example-btn" onclick="setExample('gen_mix')">🔋 Generation mix</button>
+                        <button class="example-btn" onclick="setExample('carbon')">🌱 Carbon intensity</button>
                     </div>
                     <div class="playground-output" id="output"><span class="placeholder">← Select a tool and hit Run to call the live MCP endpoint</span></div>
                 </div>
@@ -729,6 +750,18 @@
             toolSelect.value = 'analyze_price_trends';
             toolInput.value = '';
             toolInput.placeholder = 'No input needed';
+        } else if (type === 'eu_prices') {
+            toolSelect.value = 'search_energy_prices';
+            toolInput.value = 'FR';
+            toolInput.placeholder = 'Country code (DE, FR, NL, ES...)';
+        } else if (type === 'gen_mix') {
+            toolSelect.value = 'get_generation_mix';
+            toolInput.value = 'DE';
+            toolInput.placeholder = 'Country code (DE, FR, NL...)';
+        } else if (type === 'carbon') {
+            toolSelect.value = 'get_carbon_intensity';
+            toolInput.value = 'DE';
+            toolInput.placeholder = 'Country code (DE, FR, NL...)';
         }
         runTool();
     }
@@ -760,6 +793,12 @@
             return { consumption_kwh: parseFloat(val) || 1, compare_last_week: true };
         } else if (tool === 'analyze_price_trends') {
             return {};
+        } else if (tool === 'search_energy_prices') {
+            return { country: val || 'DE' };
+        } else if (tool === 'get_generation_mix') {
+            return { country: val || 'DE' };
+        } else if (tool === 'get_carbon_intensity') {
+            return { country: val || 'DE' };
         }
         return {};
     }

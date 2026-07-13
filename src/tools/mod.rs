@@ -5,6 +5,9 @@ pub mod price_forecast;
 pub mod compare_tariffs;
 pub mod energy_cost;
 pub mod price_trends;
+pub mod energy_prices;
+pub mod generation_mix;
+pub mod carbon_intensity;
 
 use serde_json::{json, Value};
 use crate::mcp::ToolDef;
@@ -110,6 +113,56 @@ pub fn list_tools() -> Vec<ToolDef> {
             input_schema: json!({
                 "type": "object",
                 "properties": {}
+            }),
+        },
+        ToolDef {
+            name: "search_energy_prices".into(),
+            description: "Get electricity spot prices for any European country. Supports 25+ countries/bidding zones. Returns hourly day-ahead prices in EUR/MWh and ct/kWh.".into(),
+            input_schema: json!({
+                "type": "object",
+                "properties": {
+                    "country": {
+                        "type": "string",
+                        "description": "Country/zone code: DE, FR, NL, BE, AT, ES, PT, IT, CH, PL, CZ, DK1, DK2, NO1, SE3, FI, EE, LV, LT, HU, RO, BG, GR, IE, GB",
+                        "default": "DE"
+                    },
+                    "date": {
+                        "type": "string",
+                        "description": "Start date in YYYY-MM-DD format (default: today)"
+                    },
+                    "date_end": {
+                        "type": "string",
+                        "description": "End date in YYYY-MM-DD format (default: start + 1 day)"
+                    }
+                }
+            }),
+        },
+        ToolDef {
+            name: "get_generation_mix".into(),
+            description: "Get the current power generation breakdown by source (solar, wind, gas, nuclear, coal, hydro, etc.) for any European country. Shows renewable vs fossil share.".into(),
+            input_schema: json!({
+                "type": "object",
+                "properties": {
+                    "country": {
+                        "type": "string",
+                        "description": "Country code: DE, FR, NL, BE, AT, ES, PL, CZ, FI, SE3, etc.",
+                        "default": "DE"
+                    }
+                }
+            }),
+        },
+        ToolDef {
+            name: "get_carbon_intensity".into(),
+            description: "Calculate the current carbon intensity (gCO2/kWh) of electricity for a European country, derived from the real-time generation mix. Includes per-source breakdown and rating.".into(),
+            input_schema: json!({
+                "type": "object",
+                "properties": {
+                    "country": {
+                        "type": "string",
+                        "description": "Country code: DE, FR, NL, BE, AT, ES, PL, CZ, FI, SE3, etc.",
+                        "default": "DE"
+                    }
+                }
             }),
         },
     ]

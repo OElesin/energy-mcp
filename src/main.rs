@@ -2,6 +2,7 @@ use lambda_http::{run, service_fn, tracing, Body, Error, Request, Response};
 use serde_json::{json, Value};
 
 mod awattar;
+mod entsoe;
 mod mcp;
 mod tools;
 
@@ -76,6 +77,9 @@ async fn route_request(request: JsonRpcRequest) -> JsonRpcResponse {
                 "compare_tariffs" => tools::compare_tariffs::execute(&arguments).await,
                 "calculate_energy_cost" => tools::energy_cost::execute(&arguments).await,
                 "analyze_price_trends" => tools::price_trends::execute(&arguments).await,
+                "search_energy_prices" => tools::energy_prices::execute(&arguments).await,
+                "get_generation_mix" => tools::generation_mix::execute(&arguments).await,
+                "get_carbon_intensity" => tools::carbon_intensity::execute(&arguments).await,
                 _ => mcp::ToolCallResult::error(format!("Unknown tool: {}", tool_name)),
             };
 
