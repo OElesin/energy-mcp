@@ -4,7 +4,10 @@ use serde::Serialize;
 use std::collections::HashMap;
 
 const ENTSOE_BASE_URL: &str = "https://web-api.tp.entsoe.eu/api";
-const ENTSOE_TOKEN: &str = "f2c23b1f-81f4-4132-883a-b566ef32d136";
+
+fn get_entsoe_token() -> String {
+    std::env::var("ENTSOE_API_TOKEN").unwrap_or_default()
+}
 
 /// Bidding zone EIC codes for European countries
 pub fn get_bidding_zone(country: &str) -> Option<&'static str> {
@@ -147,7 +150,7 @@ pub async fn fetch_prices(country: &str, start: &str, end: &str) -> Result<Vec<P
 
     let url = format!(
         "{}?documentType=A44&in_Domain={}&out_Domain={}&periodStart={}&periodEnd={}&securityToken={}",
-        ENTSOE_BASE_URL, domain, domain, start, end, ENTSOE_TOKEN
+        ENTSOE_BASE_URL, domain, domain, start, end, get_entsoe_token()
     );
 
     let client = Client::new();
@@ -171,7 +174,7 @@ pub async fn fetch_generation(country: &str, start: &str, end: &str) -> Result<V
 
     let url = format!(
         "{}?documentType=A75&processType=A16&in_Domain={}&periodStart={}&periodEnd={}&securityToken={}",
-        ENTSOE_BASE_URL, domain, start, end, ENTSOE_TOKEN
+        ENTSOE_BASE_URL, domain, start, end, get_entsoe_token()
     );
 
     let client = Client::new();
