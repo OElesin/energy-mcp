@@ -239,7 +239,82 @@ EventBridge (cron) → Lambda (Rust) → fetch ENTSO-E/aWATTar → store in S3/D
 
 ---
 
-## Immediate Next Steps
+## Phase 6: Regional Data — Marktstammdatenregister (MaStR)
+
+### What it unlocks
+
+Hyperlocal energy data for any German postcode — what's installed, who operates it, how much capacity.
+
+### New Tools
+
+| Tool | Description | Tier |
+|------|-------------|------|
+| `get_local_energy_profile` | What's installed in a given PLZ — solar, wind, battery, biomass count + total capacity | Free |
+| `get_local_renewables` | Detailed breakdown of renewable installations by type, age, and operator | Pro |
+| `compare_regions` | Compare two PLZ/Landkreis areas by installed capacity, renewable share, grid operator | Pro |
+| `get_grid_operator` | Which Netzbetreiber serves a given PLZ, their grid fees | Pro |
+
+### Data Source
+
+- **API:** `https://www.marktstammdatenregister.de/MaStRApi` (SOAP/WSDL)
+- **Auth:** Webdienst-Key (free, register at marktstammdatenregister.de)
+- **Rate limit:** 100,000 calls/day
+- **Data volume:** 6.2M+ installations
+- **Alternative:** Bulk download via [open-MaStR](https://github.com/OpenEnergyPlatform/open-MaStR) Python package
+
+### Implementation Plan
+
+**Approach: Bulk download → DynamoDB (indexed by PLZ)**
+
+```
+Step 1: Download bulk data via open-MaStR (one-time, ~2GB CSV)
+Step 2: Process + aggregate by PLZ → summary records
+Step 3: Store in DynamoDB (partition key: PLZ, ~8,000 unique PLZ entries)
+Step 4: Rust Lambda queries DynamoDB for instant lookups
+Step 5: Weekly EventBridge cron refreshes the data (delta function)
+```
+
+**DynamoDB schema:**
+```json
+{
+  "plz": "80331",
+  "total_installations": 1847,
+  "total_capacity_kw": 45200,
+  "solar": { "count": 1650, "capacity_kw": 32000 },
+  "wind": { "count": 12, "capacity_kw": 8400 },
+  "battery": { "count": 85, "capacity_kw": 2100 },
+  "biomass": { "count": 8, "capacity_kw": 1200 },
+  "other": { "count": 92, "capacity_kw": 1500 },
+  "grid_operator": "Stadtwerke München Netze GmbH",
+  "bundesland": "Bayern",
+  "landkreis": "München",
+  "last_updated": "2026-07-14"
+}
+```
+
+**Storage cost:** ~8,000 PLZ records × ~500 bytes = ~4 MB in DynamoDB ≈ €0/month (free tier)
+
+### Prerequisites
+
+1. [ ] Register at marktstammdatenregister.de
+2. [ ] Create Webdienst-Benutzer in account settings
+3. [ ] Get Webdienst-Key
+4. [ ] Run initial bulk download and process
+
+### Example Queries
+
+```
+User: "What solar capacity is installed in my area?" (PLZ 10115)
+→ get_local_energy_profile(plz: "10115")
+→ "Berlin Mitte has 2,400 solar installations with 15.2 MW total capacity,
+   plus 3 battery storage systems (450 kW). No wind turbines in this urban area."
+
+User: "Compare Munich vs Hamburg for renewable installations"
+→ compare_regions(plz_a: "80331", plz_b: "20095")
+→ "Munich: 45 MW installed (71% solar), Hamburg: 38 MW (52% wind, 30% solar)"
+```
+
+---
 
 1. **[Now]** Sign up for ENTSO-E API (email sent, wait 3 days)
 2. **[Now]** Sign up for OilPriceAPI (instant key)
@@ -262,3 +337,16 @@ EventBridge (cron) → Lambda (Rust) → fetch ENTSO-E/aWATTar → store in S3/D
 | SMARD | Raw data download | We're structured, real-time, API-first |
 
 **Our moat:** First MCP server for European energy data. As MCP adoption grows (Claude, Cursor, Copilot, custom agents), we become the default integration. Lock-in comes from agents being configured once and never changed.
+
+## Immediate Next Steps
+
+1. ~~[Done] Sign up for ENTSO-E API~~
+2. ~~[Done] Implement ENTSO-E tools (search_energy_prices, get_generation_mix, get_carbon_intensity)~~
+3. ~~[Done] Add conversational chat interface (Bedrock Claude)~~
+4. **[Now] Register at marktstammdatenregister.de** → Create Webdienst-Benutzer → Get Webdienst-Key
+5. **[Now] Sign up for OilPriceAPI** (instant key, adds gas prices)
+6. **[This week]** Build API key auth + Stripe for monetization
+7. **[This week]** Launch on HackerNews / Reddit
+8. **[Next week]** MaStR bulk download + DynamoDB pipeline
+9. **[Next week]** Add historical data pipeline (EventBridge + S3)
+10. **[Week 3]** Apply to Tibber/Ostrom affiliate programs
