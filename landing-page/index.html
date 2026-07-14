@@ -516,6 +516,98 @@
             .config-block pre { font-size: 0.72rem; }
             .stat-cards { grid-template-columns: repeat(2, 1fr); }
         }
+        /* Chat interface */
+        .chat-window {
+            background: var(--surface);
+            border: 1px solid var(--surface-border);
+            border-radius: var(--radius);
+            overflow: hidden;
+            box-shadow: var(--shadow-xl);
+        }
+        .chat-messages {
+            padding: 24px;
+            min-height: 200px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .chat-msg { margin-bottom: 16px; display: flex; }
+        .chat-msg.user { justify-content: flex-end; }
+        .chat-msg.assistant { justify-content: flex-start; }
+        .chat-bubble {
+            max-width: 85%;
+            padding: 14px 18px;
+            border-radius: 14px;
+            font-size: 0.9rem;
+            line-height: 1.6;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+        .user-bubble {
+            background: var(--accent);
+            color: white;
+            border-radius: 14px 14px 4px 14px;
+        }
+        .assistant-bubble {
+            background: var(--bg);
+            border: 1px solid var(--surface-border);
+            color: var(--text);
+            border-radius: 14px 14px 14px 4px;
+        }
+        .chat-bubble strong { font-weight: 600; }
+        .chat-examples {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            padding: 12px 24px;
+            border-top: 1px solid var(--surface-border);
+        }
+        .chat-input-bar {
+            display: flex;
+            border-top: 1px solid var(--surface-border);
+        }
+        .chat-input {
+            flex: 1;
+            background: transparent;
+            border: none;
+            color: var(--text);
+            padding: 18px 24px;
+            font-size: 0.9rem;
+            font-family: 'Inter', sans-serif;
+            outline: none;
+        }
+        .chat-input::placeholder { color: var(--text-tertiary); }
+        .chat-send {
+            background: var(--accent);
+            border: none;
+            color: white;
+            padding: 18px 28px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            font-family: 'Inter', sans-serif;
+            cursor: pointer;
+            transition: background var(--transition);
+        }
+        .chat-send:hover { background: var(--accent-hover); }
+        .chat-send:disabled { opacity: 0.5; cursor: not-allowed; }
+        .chat-typing {
+            display: inline-flex;
+            gap: 4px;
+            padding: 14px 18px;
+        }
+        .chat-typing span {
+            width: 6px;
+            height: 6px;
+            background: var(--text-tertiary);
+            border-radius: 50%;
+            animation: typing 1.4s infinite;
+        }
+        .chat-typing span:nth-child(2) { animation-delay: 0.2s; }
+        .chat-typing span:nth-child(3) { animation-delay: 0.4s; }
+        @keyframes typing {
+            0%, 60%, 100% { opacity: 0.3; transform: translateY(0); }
+            30% { opacity: 1; transform: translateY(-4px); }
+        }
+
     </style>
 </head>
 <body>
@@ -654,6 +746,39 @@
                         <button class="example-btn" onclick="setExample('carbon')">🌱 Carbon intensity</button>
                     </div>
                     <div class="playground-output" id="output"><span class="placeholder">← Select a tool and hit Run to call the live MCP endpoint</span></div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Chat Interface -->
+    <section class="section" id="chat">
+        <div class="container">
+            <div class="fade-in">
+                <h2 class="section-title">Ask anything</h2>
+                <p class="section-subtitle">No MCP client needed — just ask a question in plain language.</p>
+            </div>
+            <div class="chat-window fade-in">
+                <div class="window-chrome">
+                    <div class="window-dot red"></div>
+                    <div class="window-dot yellow"></div>
+                    <div class="window-dot green"></div>
+                    <span class="window-title">energy assistant — powered by Claude</span>
+                </div>
+                <div class="chat-messages" id="chatMessages">
+                    <div class="chat-msg assistant">
+                        <div class="chat-bubble assistant-bubble">Hi! I'm your energy assistant. Ask me anything about electricity prices, charging times, grid cleanliness, or tariff comparisons. Try:<br><br>• "When should I charge my EV tonight?"<br>• "Wie sauber ist der Strom gerade?"<br>• "Compare dynamic vs fixed tariff for my 350 kWh/month"</div>
+                    </div>
+                </div>
+                <div class="chat-examples">
+                    <button class="example-btn" onclick="sendChat('When should I charge my EV? 3 hours, 11 kWh')">⚡ EV charging</button>
+                    <button class="example-btn" onclick="sendChat('How clean is Germany\'s grid right now?')">🌱 Grid cleanliness</button>
+                    <button class="example-btn" onclick="sendChat('Was kostet Strom gerade?')">🇩🇪 Strompreis</button>
+                    <button class="example-btn" onclick="sendChat('Compare electricity prices in France vs Germany')">🌍 FR vs DE</button>
+                </div>
+                <div class="chat-input-bar">
+                    <input type="text" class="chat-input" id="chatInput" placeholder="Ask about energy prices, charging times, grid mix..." onkeydown="if(event.key==='Enter'&&!event.shiftKey)sendChat()">
+                    <button class="chat-send" id="chatSend" onclick="sendChat()">Send</button>
                 </div>
             </div>
         </div>
@@ -906,6 +1031,74 @@
     }, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
 
     document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
+    // Chat interface
+    const CHAT_URL = 'https://agye38ptl3.execute-api.eu-west-1.amazonaws.com/prod/chat';
+    const chatMessages = document.getElementById('chatMessages');
+    const chatInput = document.getElementById('chatInput');
+    const chatSend = document.getElementById('chatSend');
+
+    function addChatMessage(role, content) {
+        const msg = document.createElement('div');
+        msg.className = `chat-msg ${role}`;
+        msg.innerHTML = `<div class="chat-bubble ${role}-bubble">${content}</div>`;
+        chatMessages.appendChild(msg);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+
+    function addTypingIndicator() {
+        const msg = document.createElement('div');
+        msg.className = 'chat-msg assistant';
+        msg.id = 'typing-indicator';
+        msg.innerHTML = '<div class="chat-bubble assistant-bubble chat-typing"><span></span><span></span><span></span></div>';
+        chatMessages.appendChild(msg);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+
+    function removeTypingIndicator() {
+        const el = document.getElementById('typing-indicator');
+        if (el) el.remove();
+    }
+
+    function formatResponse(text) {
+        // Basic markdown-like formatting
+        return text
+            .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+            .replace(/\n/g, '<br>');
+    }
+
+    async function sendChat(predefined) {
+        const message = predefined || chatInput.value.trim();
+        if (!message) return;
+
+        addChatMessage('user', message);
+        chatInput.value = '';
+        chatSend.disabled = true;
+        addTypingIndicator();
+
+        try {
+            const res = await fetch(CHAT_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ message })
+            });
+
+            const data = await res.json();
+            removeTypingIndicator();
+
+            if (data.response) {
+                addChatMessage('assistant', formatResponse(data.response));
+            } else if (data.error) {
+                addChatMessage('assistant', `⚠️ ${data.error}`);
+            }
+        } catch (err) {
+            removeTypingIndicator();
+            addChatMessage('assistant', `⚠️ Connection error. Please try again.`);
+        }
+
+        chatSend.disabled = false;
+        chatInput.focus();
+    }
+
     </script>
 </body>
 </html>

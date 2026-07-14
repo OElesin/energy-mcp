@@ -1,0 +1,58 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: AWS::Serverless-2016-10-31
+Description: Energy MCP Chat Backend — Bedrock Claude + MCP tools
+
+Globals:
+  Function:
+    Timeout: 30
+    MemorySize: 256
+
+Resources:
+  ChatFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ./
+      Handler: handler.handler
+      Runtime: python3.13
+      Architectures:
+        - arm64
+      Policies:
+        - Version: "2012-10-17"
+          Statement:
+            - Effect: Allow
+              Action:
+                - bedrock:InvokeModel
+              Resource:
+                - "arn:aws:bedrock:*::foundation-model/anthropic.*"
+                - "arn:aws:bedrock:*:514965996716:inference-profile/*"
+      Events:
+        ChatEndpoint:
+          Type: HttpApi
+          Properties:
+            Path: /chat
+            Method: POST
+            ApiId: !Ref ChatApi
+        ChatOptions:
+          Type: HttpApi
+          Properties:
+            Path: /chat
+            Method: OPTIONS
+            ApiId: !Ref ChatApi
+
+  ChatApi:
+    Type: AWS::Serverless::HttpApi
+    Properties:
+      StageName: prod
+      CorsConfiguration:
+        AllowOrigins:
+          - "*"
+        AllowMethods:
+          - POST
+          - OPTIONS
+        AllowHeaders:
+          - Content-Type
+
+Outputs:
+  ChatEndpoint:
+    Description: Chat API endpoint
+    Value: !Sub "https://${ChatApi}.execute-api.${AWS::Region}.amazonaws.com/prod/chat"
