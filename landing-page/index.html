@@ -1040,9 +1040,40 @@
     function addChatMessage(role, content) {
         const msg = document.createElement('div');
         msg.className = `chat-msg ${role}`;
-        msg.innerHTML = `<div class="chat-bubble ${role}-bubble">${content}</div>`;
+        const bubble = document.createElement('div');
+        bubble.className = `chat-bubble ${role}-bubble`;
+        msg.appendChild(bubble);
         chatMessages.appendChild(msg);
         chatMessages.scrollTop = chatMessages.scrollHeight;
+
+        if (role === 'assistant') {
+            // Word-by-word reveal for assistant messages
+            streamText(bubble, content);
+        } else {
+            bubble.innerHTML = content;
+        }
+    }
+
+    function streamText(element, html) {
+        const words = html.split(/(\s+|<[^>]+>)/); // Split by whitespace and HTML tags
+        let i = 0;
+        let buffer = '';
+
+        function addNext() {
+            if (i >= words.length) return;
+
+            const chunk = words[i];
+            buffer += chunk;
+            element.innerHTML = buffer;
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+            i++;
+
+            // HTML tags appear instantly, words have a delay
+            const delay = chunk.startsWith('<') ? 0 : Math.random() * 20 + 10;
+            setTimeout(addNext, delay);
+        }
+
+        addNext();
     }
 
     function addTypingIndicator() {
