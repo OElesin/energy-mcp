@@ -8,6 +8,7 @@ pub mod price_trends;
 pub mod energy_prices;
 pub mod generation_mix;
 pub mod carbon_intensity;
+pub mod gas_prices;
 
 use serde_json::{json, Value};
 use crate::mcp::ToolDef;
@@ -161,6 +162,20 @@ pub fn list_tools() -> Vec<ToolDef> {
                         "type": "string",
                         "description": "Country code: DE, FR, NL, BE, AT, ES, PL, CZ, FI, SE3, etc.",
                         "default": "DE"
+                    }
+                }
+            }),
+        },
+        ToolDef {
+            name: "get_gas_prices".into(),
+            description: "Get European natural gas prices (TTF Dutch benchmark). Shows current price, historical data, and trend. TTF is the reference price for most European gas contracts and influences electricity prices.".into(),
+            input_schema: json!({
+                "type": "object",
+                "properties": {
+                    "range": {
+                        "type": "string",
+                        "description": "Time range for historical prices: 7d, 1mo, 3mo, 6mo, 1y (default: 1mo).",
+                        "default": "1mo"
                     }
                 }
             }),

@@ -80,6 +80,7 @@ async fn route_request(request: JsonRpcRequest) -> JsonRpcResponse {
                 "search_energy_prices" => tools::energy_prices::execute(&arguments).await,
                 "get_generation_mix" => tools::generation_mix::execute(&arguments).await,
                 "get_carbon_intensity" => tools::carbon_intensity::execute(&arguments).await,
+                "get_gas_prices" => tools::gas_prices::execute(&arguments).await,
                 _ => mcp::ToolCallResult::error(format!("Unknown tool: {}", tool_name)),
             };
 

@@ -174,6 +174,11 @@ def invoke_bedrock(messages: list) -> dict:
 
 def handler(event, context):
     """Lambda handler for the /chat endpoint."""
+    # Handle CORS preflight
+    http_method = event.get("requestContext", {}).get("http", {}).get("method", "")
+    if http_method == "OPTIONS":
+        return response_json(200, {})
+
     # Parse request
     try:
         body = json.loads(event.get("body", "{}"))
