@@ -8,6 +8,12 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Privacy-friendly analytics by Plausible -->
+    <script async src="https://plausible.io/js/pa-tCq8S1usMostRo3GHtETW.js"></script>
+    <script>
+      window.plausible=window.plausible||function(){(plausible.q=plausible.q||[]).push(arguments)},plausible.init=plausible.init||function(i){plausible.o=i||{}};
+      plausible.init()
+    </script>
     <style>
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -826,6 +832,7 @@
             btn.textContent = 'Copied!';
             btn.classList.add('copied');
             setTimeout(() => { btn.textContent = 'Copy'; btn.classList.remove('copied'); }, 2000);
+            plausible('Config Copied');
         });
     }
 
@@ -966,6 +973,7 @@
 
         output.innerHTML = '<span class="spinner"></span> Calling endpoint...';
         runBtn.disabled = true;
+        plausible('Playground Tool', {props: {tool: tool}});
 
         const payload = {
             jsonrpc: '2.0',
@@ -1105,6 +1113,7 @@
         chatInput.value = '';
         chatSend.disabled = true;
         addTypingIndicator();
+        plausible('Chat Message', {props: {predefined: !!predefined}});
 
         try {
             const res = await fetch(CHAT_URL, {
