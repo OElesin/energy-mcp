@@ -102,6 +102,16 @@ TOOLS = [
             }
         }
     },
+    {
+        "name": "get_gas_prices",
+        "description": "Get European natural gas prices (TTF Dutch benchmark). Shows current price, historical data, and trend. TTF is the reference price for most European gas contracts and influences electricity prices.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "range": {"type": "string", "description": "Time range: 7d, 1mo, 3mo, 6mo, 1y (default: 1mo)."}
+            }
+        }
+    },
 ]
 
 SYSTEM_PROMPT = """You are an energy assistant for European electricity consumers. You help people:
