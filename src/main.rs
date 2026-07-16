@@ -1,6 +1,7 @@
-use lambda_http::{run, service_fn, tracing, Body, Error, Request, Response};
+use lambda_http::{run, service_fn, tracing, Body, Error, Request, RequestExt, Response};
 use serde_json::{json, Value};
 
+mod auth;
 mod awattar;
 mod entsoe;
 mod mcp;
@@ -9,10 +10,57 @@ mod tools;
 use mcp::{JsonRpcRequest, JsonRpcResponse};
 
 const SERVER_NAME: &str = "Energy-MCP";
-const SERVER_VERSION: &str = "0.1.0";
+const SERVER_VERSION: &str = "0.2.0";
 const PROTOCOL_VERSION: &str = "2025-03-26";
 
 async fn handler(event: Request) -> Result<Response<Body>, Error> {
+    // Initialize DynamoDB client
+    let config = aws_config::load_defaults(aws_config::BehaviorVersion::latest()).await;
+    let dynamo = aws_sdk_dynamodb::Client::new(&config);
+
+    // Extract source IP from request context
+    let source_ip = event
+        .request_context_ref()
+        .map(|ctx| match ctx {
+            lambda_http::request::RequestContext::ApiGatewayV2(http) => {
+                http.http.source_ip.clone().unwrap_or_else(|| "unknown".into())
+            }
+            _ => "unknown".into(),
+        })
+        .unwrap_or_else(|| "unknown".into());
+
+    let api_key = event
+        .headers()
+        .get("authorization")
+        .and_then(|v| v.to_str().ok())
+        .map(|v| v.trim_start_matches("Bearer ").to_string());
+
+    // Validate auth/rate limit
+    match auth::validate_request(&dynamo, api_key.as_deref(), &source_ip).await {
+        Ok(_auth_result) => {
+            // Proceed with request
+        }
+        Err(auth::AuthError::RateLimited { limit, tier }) => {
+            let resp = JsonRpcResponse::error(
+                None,
+                -32000,
+                format!("Rate limit exceeded. {} tier allows {} requests/day. Upgrade at https://energy-mcp.getbrechtai.com", tier, limit),
+            );
+            return build_response(&resp);
+        }
+        Err(auth::AuthError::InvalidKey) => {
+            let resp = JsonRpcResponse::error(
+                None,
+                -32001,
+                "Invalid API key. Get one at https://energy-mcp.getbrechtai.com".into(),
+            );
+            return build_response(&resp);
+        }
+        Err(auth::AuthError::InternalError(_)) => {
+            // Don't block on auth errors — fail open
+        }
+    }
+
     // Parse the JSON-RPC request from the body
     let body = event.body();
     let body_str = match body {
