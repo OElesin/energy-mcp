@@ -522,6 +522,86 @@
             .config-block pre { font-size: 0.72rem; }
             .stat-cards { grid-template-columns: repeat(2, 1fr); }
         }
+        /* CTA Section */
+        .cta-box {
+            background: var(--surface);
+            border: 1px solid var(--surface-border);
+            border-radius: var(--radius);
+            padding: 48px;
+            text-align: center;
+            max-width: 700px;
+            margin: 0 auto;
+            box-shadow: var(--shadow-lg);
+        }
+
+        .cta-title {
+            font-size: 1.6rem;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+            margin-bottom: 12px;
+        }
+
+        .cta-subtitle {
+            color: var(--text-secondary);
+            font-size: 1rem;
+            margin-bottom: 28px;
+            line-height: 1.7;
+        }
+
+        .cta-tiers {
+            display: flex;
+            justify-content: center;
+            gap: 16px;
+            margin-bottom: 32px;
+            flex-wrap: wrap;
+        }
+
+        .cta-tier {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            padding: 12px 20px;
+            background: var(--bg);
+            border: 1px solid var(--surface-border);
+            border-radius: var(--radius-sm);
+            min-width: 160px;
+        }
+
+        .cta-tier-name {
+            font-weight: 600;
+            font-size: 0.92rem;
+            color: var(--text);
+        }
+
+        .cta-tier-detail {
+            font-size: 0.78rem;
+            color: var(--text-tertiary);
+        }
+
+        .cta-button {
+            display: inline-block;
+            padding: 14px 32px;
+            background: var(--accent);
+            color: white;
+            border-radius: var(--radius-sm);
+            font-weight: 600;
+            font-size: 1rem;
+            text-decoration: none;
+            transition: all var(--transition);
+            box-shadow: var(--shadow-md);
+        }
+
+        .cta-button:hover {
+            background: var(--accent-hover);
+            transform: translateY(-1px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        @media (max-width: 640px) {
+            .cta-box { padding: 32px 24px; }
+            .cta-tiers { flex-direction: column; align-items: center; }
+        }
+
         /* Chat interface */
         .chat-window {
             background: var(--surface);
@@ -736,6 +816,7 @@
                             <option value="search_energy_prices">search_energy_prices</option>
                             <option value="get_generation_mix">get_generation_mix</option>
                             <option value="get_carbon_intensity">get_carbon_intensity</option>
+                            <option value="get_gas_prices">get_gas_prices</option>
                         </select>
                         <input type="text" class="playground-input" id="toolInput" placeholder="hours_ahead (e.g. 24)">
                         <button class="playground-run" id="runBtn" onclick="runTool()">Run ▶</button>
@@ -750,6 +831,7 @@
                         <button class="example-btn" onclick="setExample('eu_prices')">🌍 France prices</button>
                         <button class="example-btn" onclick="setExample('gen_mix')">🔋 Generation mix</button>
                         <button class="example-btn" onclick="setExample('carbon')">🌱 Carbon intensity</button>
+                        <button class="example-btn" onclick="setExample('gas')">🔥 Gas prices (TTF)</button>
                     </div>
                     <div class="playground-output" id="output"><span class="placeholder">← Select a tool and hit Run to call the live MCP endpoint</span></div>
                 </div>
@@ -785,6 +867,33 @@
                 <div class="chat-input-bar">
                     <input type="text" class="chat-input" id="chatInput" placeholder="Ask about energy prices, charging times, grid mix..." onkeydown="if(event.key==='Enter'&&!event.shiftKey)sendChat()">
                     <button class="chat-send" id="chatSend" onclick="sendChat()">Send</button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Get API Key CTA -->
+    <section class="section" id="api-key">
+        <div class="container">
+            <div class="fade-in cta-box">
+                <div class="cta-content">
+                    <h2 class="cta-title">Need more than 50 requests/day?</h2>
+                    <p class="cta-subtitle">The free tier gives you 50 requests/day with no key. For production workloads, get an API key for up to 10,000 requests/day.</p>
+                    <div class="cta-tiers">
+                        <div class="cta-tier">
+                            <span class="cta-tier-name">Free</span>
+                            <span class="cta-tier-detail">50 req/day • No key needed</span>
+                        </div>
+                        <div class="cta-tier">
+                            <span class="cta-tier-name">Pro</span>
+                            <span class="cta-tier-detail">10,000 req/day • API key</span>
+                        </div>
+                        <div class="cta-tier">
+                            <span class="cta-tier-name">Business</span>
+                            <span class="cta-tier-detail">100,000 req/day • SLA</span>
+                        </div>
+                    </div>
+                    <a href="mailto:elesin.olalekan@gmail.com?subject=Energy%20MCP%20API%20Key%20Request&body=Hi%2C%20I'd%20like%20to%20get%20an%20API%20key%20for%20the%20Energy%20MCP%20server.%0A%0AUse%20case%3A%20%0ATier%3A%20Pro%20%2F%20Business" class="cta-button" onclick="plausible('Get API Key Click')">Get API Key →</a>
                 </div>
             </div>
         </div>
@@ -894,6 +1003,10 @@
             toolSelect.value = 'get_carbon_intensity';
             toolInput.value = 'DE';
             toolInput.placeholder = 'Country code (DE, FR, NL...)';
+        } else if (type === 'gas') {
+            toolSelect.value = 'get_gas_prices';
+            toolInput.value = '1mo';
+            toolInput.placeholder = 'Range: 7d, 1mo, 3mo, 6mo, 1y';
         }
         runTool();
     }
@@ -931,6 +1044,8 @@
             return { country: val || 'DE' };
         } else if (tool === 'get_carbon_intensity') {
             return { country: val || 'DE' };
+        } else if (tool === 'get_gas_prices') {
+            return { range: val || '1mo' };
         }
         return {};
     }
