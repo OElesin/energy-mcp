@@ -522,6 +522,69 @@
             .config-block pre { font-size: 0.72rem; }
             .stat-cards { grid-template-columns: repeat(2, 1fr); }
         }
+        /* Home Assistant Docs */
+        .ha-docs {
+            max-width: 700px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            gap: 28px;
+        }
+
+        .ha-example {
+            background: var(--surface);
+            border: 1px solid var(--surface-border);
+            border-radius: var(--radius);
+            padding: 24px;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .ha-example-title {
+            font-size: 1rem;
+            font-weight: 600;
+            margin-bottom: 6px;
+        }
+
+        .ha-example-desc {
+            color: var(--text-secondary);
+            font-size: 0.88rem;
+            margin-bottom: 16px;
+            line-height: 1.6;
+        }
+
+        .ha-code-block {
+            background: var(--code-bg);
+            border-radius: var(--radius-sm);
+            padding: 16px 20px;
+            position: relative;
+            overflow-x: auto;
+        }
+
+        .ha-code-block pre {
+            font-family: 'SF Mono', 'Fira Code', monospace;
+            font-size: 0.78rem;
+            color: var(--code-text);
+            line-height: 1.7;
+            white-space: pre;
+            margin: 0;
+        }
+
+        .ha-code-block code {
+            font-family: inherit;
+        }
+
+        .ha-copy-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+        }
+
+        @media (max-width: 640px) {
+            .ha-example { padding: 16px; }
+            .ha-code-block { padding: 12px; }
+            .ha-code-block pre { font-size: 0.7rem; }
+        }
+
         /* CTA Section */
         .cta-box {
             background: var(--surface);
@@ -872,6 +935,115 @@
         </div>
     </section>
 
+    <!-- Home Assistant Section -->
+    <section class="section" id="homeassistant">
+        <div class="container">
+            <div class="fade-in">
+                <h2 class="section-title">Works with Home Assistant</h2>
+                <p class="section-subtitle">No custom integration needed. Use HA's built-in command line sensor to pull live data.</p>
+            </div>
+
+            <div class="ha-docs fade-in">
+                <!-- Spot price sensor -->
+                <div class="ha-example">
+                    <h3 class="ha-example-title">📊 Current spot price sensor</h3>
+                    <p class="ha-example-desc">Updates every 15 minutes with today's price stats — average, min, max, cheapest/most expensive hours.</p>
+                    <div class="ha-code-block">
+                        <button class="copy-btn ha-copy-btn" onclick="copyHA(this, 'ha-spot')">Copy</button>
+                        <pre id="ha-spot"><code>command_line:
+  - sensor:
+      name: electricity_price_stats
+      command: >
+        curl -s -X POST https://energy-mcp.getbrechtai.com/mcp
+        -H "Content-Type: application/json"
+        -H "Accept: application/json, text/event-stream"
+        -d '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"get_price_stats","arguments":{}}}'
+        | grep "^data:" | sed 's/^data: //'
+      value_template: >
+        {{ (value_json.result.content[0].text | from_json).stats.avg_ct_kwh | round(2) }}
+      json_attributes_path: "$.result.content[0].text"
+      unit_of_measurement: "ct/kWh"
+      scan_interval: 900</code></pre>
+                    </div>
+                </div>
+
+                <!-- Cheapest window sensor -->
+                <div class="ha-example">
+                    <h3 class="ha-example-title">⚡ Cheapest EV charging window</h3>
+                    <p class="ha-example-desc">Finds the best 3-hour window for 11 kWh. Returns the start time as state, with cost and price as attributes.</p>
+                    <div class="ha-code-block">
+                        <button class="copy-btn ha-copy-btn" onclick="copyHA(this, 'ha-cheapest')">Copy</button>
+                        <pre id="ha-cheapest"><code>command_line:
+  - sensor:
+      name: cheapest_ev_window
+      command: >
+        curl -s -X POST https://energy-mcp.getbrechtai.com/mcp
+        -H "Content-Type: application/json"
+        -H "Accept: application/json, text/event-stream"
+        -d '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"find_cheapest_window","arguments":{"duration_hours":3,"consumption_kwh":11}}}'
+        | grep "^data:" | sed 's/^data: //'
+      value_template: >
+        {{ (value_json.result.content[0].text | from_json).start }}
+      json_attributes_path: "$.result.content[0].text"
+      scan_interval: 1800</code></pre>
+                    </div>
+                </div>
+
+                <!-- Automation example -->
+                <div class="ha-example">
+                    <h3 class="ha-example-title">🔌 Automation: Start charging at cheapest time</h3>
+                    <p class="ha-example-desc">Triggers your EV charger when the cheapest window begins. Sends a notification with the cost.</p>
+                    <div class="ha-code-block">
+                        <button class="copy-btn ha-copy-btn" onclick="copyHA(this, 'ha-automation')">Copy</button>
+                        <pre id="ha-automation"><code>automation:
+  - alias: "Start EV charging at cheapest window"
+    trigger:
+      - platform: template
+        value_template: >
+          {{ now().isoformat()[:16] ==
+             states('sensor.cheapest_ev_window')[:16] }}
+    action:
+      - service: switch.turn_on
+        target:
+          entity_id: switch.ev_charger
+      - service: notify.mobile_app
+        data:
+          title: "⚡ EV charging started"
+          message: >
+            Charging at {{ state_attr('sensor.cheapest_ev_window',
+            'avg_price_ct_kwh') }} ct/kWh.
+            Estimated cost: €{{ state_attr('sensor.cheapest_ev_window',
+            'total_cost_eur') }}</code></pre>
+                    </div>
+                </div>
+
+                <!-- Carbon intensity sensor -->
+                <div class="ha-example">
+                    <h3 class="ha-example-title">🌱 Carbon intensity sensor</h3>
+                    <p class="ha-example-desc">Track how clean the grid is right now. Use to prefer green hours for flexible loads.</p>
+                    <div class="ha-code-block">
+                        <button class="copy-btn ha-copy-btn" onclick="copyHA(this, 'ha-carbon')">Copy</button>
+                        <pre id="ha-carbon"><code>command_line:
+  - sensor:
+      name: grid_carbon_intensity
+      command: >
+        curl -s -X POST https://energy-mcp.getbrechtai.com/mcp
+        -H "Content-Type: application/json"
+        -H "Accept: application/json, text/event-stream"
+        -d '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"get_carbon_intensity","arguments":{"country":"DE"}}}'
+        | grep "^data:" | sed 's/^data: //'
+      value_template: >
+        {{ (value_json.result.content[0].text | from_json).carbon_intensity_gco2_kwh | round(0) }}
+      unit_of_measurement: "gCO₂/kWh"
+      scan_interval: 1800</code></pre>
+                    </div>
+                </div>
+            </div>
+
+            <p class="data-note fade-in" style="margin-top: 24px;">No HACS install, no custom components, no dependencies. Just YAML → live data.</p>
+        </div>
+    </section>
+
     <!-- Get API Key CTA -->
     <section class="section" id="api-key">
         <div class="container">
@@ -903,6 +1075,7 @@
     <footer>
         <div class="container">
             <div class="footer-links">
+                <a href="#homeassistant">Home Assistant</a>
                 <a href="https://github.com/OElesin/energy-mcp" target="_blank" rel="noopener">GitHub</a>
                 <a href="https://linkedin.com/in/olaleaborede" target="_blank" rel="noopener">LinkedIn</a>
                 <a href="https://www.awattar.de" target="_blank" rel="noopener">aWATTar</a>
@@ -942,6 +1115,17 @@
             btn.classList.add('copied');
             setTimeout(() => { btn.textContent = 'Copy'; btn.classList.remove('copied'); }, 2000);
             plausible('Config Copied');
+        });
+    }
+
+    // Copy HA YAML
+    function copyHA(btn, id) {
+        const code = document.getElementById(id).textContent;
+        navigator.clipboard.writeText(code).then(() => {
+            btn.textContent = 'Copied!';
+            btn.classList.add('copied');
+            setTimeout(() => { btn.textContent = 'Copy'; btn.classList.remove('copied'); }, 2000);
+            plausible('HA YAML Copied', {props: {snippet: id}});
         });
     }
 
