@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Blog — Energy MCP</title>
+    <meta name="description" content="Guides and tutorials on European electricity prices, EV charging optimization, Home Assistant energy automation, carbon intensity, and dynamic tariffs.">
+    <link rel="canonical" href="https://energy-mcp.getbrechtai.com/blog/">
+    <meta property="og:title" content="Blog — Energy MCP">
+    <meta property="og:description" content="Guides on electricity prices, EV charging, carbon intensity, and energy automation.">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://energy-mcp.getbrechtai.com/blog/">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script async src="https://plausible.io/js/pa-tCq8S1usMostRo3GHtETW.js"></script>
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        :root {
+            --bg: #ffffff; --surface: #f8fafc; --surface-border: #e2e8f0;
+            --text: #0f172a; --text-secondary: #475569; --text-tertiary: #64748b;
+            --accent: #059669; --accent-light: #d1fae5; --accent-hover: #047857;
+            --radius: 14px; --radius-sm: 8px; --transition: 0.2s ease;
+        }
+        html { scroll-behavior: smooth; }
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg); color: var(--text); line-height: 1.6;
+            -webkit-font-smoothing: antialiased;
+        }
+        .container { max-width: 740px; margin: 0 auto; padding: 0 24px; }
+        nav {
+            position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+            background: rgba(255,255,255,0.9); backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--surface-border);
+        }
+        nav .nav-inner {
+            max-width: 740px; margin: 0 auto; padding: 0 24px;
+            display: flex; align-items: center; justify-content: space-between; height: 64px;
+        }
+        .nav-brand {
+            font-weight: 700; font-size: 1.1rem; color: var(--text);
+            text-decoration: none; display: flex; align-items: center; gap: 8px;
+        }
+        .nav-brand span { font-size: 1.3rem; }
+        .nav-links { display: flex; gap: 20px; }
+        .nav-links a { color: var(--text-secondary); text-decoration: none; font-size: 0.88rem; font-weight: 500; }
+        .nav-links a:hover { color: var(--accent); }
+        .blog-header { padding: 120px 0 48px; }
+        .blog-header h1 { font-size: 2rem; font-weight: 800; letter-spacing: -0.03em; }
+        .blog-header p { color: var(--text-secondary); margin-top: 8px; font-size: 1.05rem; }
+        .post-list { padding: 0 0 80px; display: flex; flex-direction: column; gap: 24px; }
+        .post-card {
+            background: var(--surface); border: 1px solid var(--surface-border);
+            border-radius: var(--radius); padding: 28px; text-decoration: none;
+            transition: all var(--transition); display: block;
+        }
+        .post-card:hover { border-color: var(--accent); box-shadow: 0 4px 12px rgba(0,0,0,0.06); transform: translateY(-2px); }
+        .post-card-meta { color: var(--text-tertiary); font-size: 0.82rem; margin-bottom: 8px; }
+        .post-card h2 { font-size: 1.2rem; font-weight: 700; color: var(--text); margin-bottom: 8px; letter-spacing: -0.01em; }
+        .post-card p { color: var(--text-secondary); font-size: 0.92rem; margin: 0; line-height: 1.6; }
+        .post-card-tags { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
+        .post-tag {
+            padding: 3px 10px; background: var(--accent-light); color: var(--accent);
+            border-radius: 100px; font-size: 0.72rem; font-weight: 600;
+        }
+        footer {
+            border-top: 1px solid var(--surface-border); padding: 40px 0; text-align: center;
+        }
+        .footer-links { display: flex; justify-content: center; gap: 24px; margin-bottom: 16px; flex-wrap: wrap; }
+        .footer-links a { color: var(--text-secondary); text-decoration: none; font-size: 0.88rem; }
+        .footer-links a:hover { color: var(--accent); }
+        .footer-copy { color: var(--text-tertiary); font-size: 0.8rem; }
+        @media (max-width: 640px) {
+            .blog-header { padding: 100px 0 32px; }
+            .post-card { padding: 20px; }
+        }
+    </style>
+</head>
+<body>
+    <nav>
+        <div class="nav-inner">
+            <a href="/" class="nav-brand"><span>⚡</span> Energy MCP</a>
+            <div class="nav-links">
+                <a href="/blog/">Blog</a>
+                <a href="/#homeassistant">Home Assistant</a>
+                <a href="/#playground">Playground</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <header class="blog-header">
+            <h1>Blog</h1>
+            <p>Guides on energy pricing, smart charging, and automation.</p>
+        </header>
+
+        <div class="post-list">
+            <a href="/blog/carbon-intensity-germany-real-time.html" class="post-card">
+                <p class="post-card-meta">July 19, 2026 · 6 min read</p>
+                <h2>Real-Time Carbon Intensity of Electricity in Germany</h2>
+                <p>Track gCO₂/kWh live. See the generation mix (solar, wind, gas, coal) and find the greenest hours to run your appliances.</p>
+                <div class="post-card-tags">
+                    <span class="post-tag">Carbon</span>
+                    <span class="post-tag">Germany</span>
+                    <span class="post-tag">Home Assistant</span>
+                </div>
+            </a>
+
+            <a href="/blog/home-assistant-electricity-prices-no-integration.html" class="post-card">
+                <p class="post-card-meta">July 19, 2026 · 7 min read</p>
+                <h2>Home Assistant Electricity Prices Without a Custom Integration</h2>
+                <p>Get real-time EPEX Spot prices in HA without HACS or custom components. Just YAML and a free API. Includes cheapest window sensor + automation.</p>
+                <div class="post-card-tags">
+                    <span class="post-tag">Home Assistant</span>
+                    <span class="post-tag">EPEX Spot</span>
+                    <span class="post-tag">Tutorial</span>
+                </div>
+            </a>
+
+            <a href="/blog/cheapest-ev-charging-window-germany.html" class="post-card">
+                <p class="post-card-meta">July 19, 2026 · 5 min read</p>
+                <h2>Find the Cheapest Hours to Charge Your EV in Germany</h2>
+                <p>How to automatically find the cheapest electricity hours using real-time EPEX Spot prices. Save €300–500/year on EV charging.</p>
+                <div class="post-card-tags">
+                    <span class="post-tag">EV Charging</span>
+                    <span class="post-tag">EPEX Spot</span>
+                    <span class="post-tag">Dynamic Tariff</span>
+                </div>
+            </a>
+        </div>
+    </div>
+
+    <footer>
+        <div class="container">
+            <div class="footer-links">
+                <a href="/">Home</a>
+                <a href="/#homeassistant">Home Assistant</a>
+                <a href="https://github.com/OElesin/energy-mcp" target="_blank">GitHub</a>
+            </div>
+            <p class="footer-copy">Energy MCP — European energy prices for AI agents.</p>
+        </div>
+    </footer>
+</body>
+</html>

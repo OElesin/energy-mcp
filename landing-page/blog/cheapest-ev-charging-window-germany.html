@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Find the Cheapest Hours to Charge Your EV in Germany — Energy MCP</title>
+    <meta name="description" content="How to automatically find the cheapest electricity hours to charge your EV in Germany using real-time EPEX Spot prices. Save money with one API call.">
+    <meta name="keywords" content="cheapest electricity hours germany, EV charging cheapest time, EPEX Spot prices, dynamic tariff EV, Strompreis günstigste Stunden">
+    <link rel="canonical" href="https://energy-mcp.getbrechtai.com/blog/cheapest-ev-charging-window-germany.html">
+    <meta property="og:title" content="Find the Cheapest Hours to Charge Your EV in Germany">
+    <meta property="og:description" content="Real-time EPEX Spot data tells you exactly when to charge. One API call returns the optimal window + estimated cost.">
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="https://energy-mcp.getbrechtai.com/blog/cheapest-ev-charging-window-germany.html">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Find the Cheapest Hours to Charge Your EV in Germany">
+    <meta name="twitter:description" content="Real-time EPEX Spot data tells you exactly when to charge. One API call returns the optimal window + estimated cost.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script async src="https://plausible.io/js/pa-tCq8S1usMostRo3GHtETW.js"></script>
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        :root {
+            --bg: #ffffff; --surface: #f8fafc; --surface-border: #e2e8f0;
+            --text: #0f172a; --text-secondary: #475569; --text-tertiary: #64748b;
+            --accent: #059669; --accent-light: #d1fae5; --accent-hover: #047857;
+            --code-bg: #1e293b; --code-text: #e2e8f0;
+            --radius: 14px; --radius-sm: 8px; --transition: 0.2s ease;
+        }
+        html { scroll-behavior: smooth; }
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg); color: var(--text); line-height: 1.8;
+            -webkit-font-smoothing: antialiased;
+        }
+        .container { max-width: 740px; margin: 0 auto; padding: 0 24px; }
+        nav {
+            position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+            background: rgba(255,255,255,0.9); backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--surface-border);
+        }
+        nav .nav-inner {
+            max-width: 740px; margin: 0 auto; padding: 0 24px;
+            display: flex; align-items: center; justify-content: space-between; height: 64px;
+        }
+        .nav-brand {
+            font-weight: 700; font-size: 1.1rem; color: var(--text);
+            text-decoration: none; display: flex; align-items: center; gap: 8px;
+        }
+        .nav-brand span { font-size: 1.3rem; }
+        .nav-links { display: flex; gap: 20px; }
+        .nav-links a { color: var(--text-secondary); text-decoration: none; font-size: 0.88rem; font-weight: 500; }
+        .nav-links a:hover { color: var(--accent); }
+        article { padding: 120px 0 80px; }
+        .article-meta { color: var(--text-tertiary); font-size: 0.85rem; margin-bottom: 16px; }
+        h1 { font-size: clamp(1.8rem, 4vw, 2.4rem); font-weight: 800; letter-spacing: -0.03em; line-height: 1.2; margin-bottom: 24px; }
+        h2 { font-size: 1.4rem; font-weight: 700; margin: 48px 0 16px; letter-spacing: -0.02em; }
+        h3 { font-size: 1.1rem; font-weight: 600; margin: 32px 0 12px; }
+        p { margin-bottom: 20px; color: var(--text-secondary); }
+        strong { color: var(--text); }
+        ul, ol { margin: 0 0 20px 20px; color: var(--text-secondary); }
+        li { margin-bottom: 8px; }
+        a { color: var(--accent); }
+        pre {
+            background: var(--code-bg); border-radius: var(--radius-sm); padding: 20px;
+            overflow-x: auto; margin: 0 0 24px; font-family: 'SF Mono', 'Fira Code', monospace;
+            font-size: 0.82rem; color: var(--code-text); line-height: 1.7;
+        }
+        code {
+            font-family: 'SF Mono', 'Fira Code', monospace; font-size: 0.85em;
+            background: var(--surface); padding: 2px 6px; border-radius: 4px; color: var(--accent);
+        }
+        pre code { background: none; padding: 0; color: inherit; font-size: inherit; }
+        .callout {
+            background: var(--accent-light); border: 1px solid var(--accent);
+            border-radius: var(--radius-sm); padding: 16px 20px; margin: 24px 0;
+            font-size: 0.92rem; color: var(--text);
+        }
+        .cta-box {
+            background: var(--surface); border: 1px solid var(--surface-border);
+            border-radius: var(--radius); padding: 32px; text-align: center; margin: 48px 0;
+        }
+        .cta-box h3 { margin-top: 0; }
+        .cta-button {
+            display: inline-block; padding: 12px 28px; background: var(--accent); color: white;
+            border-radius: var(--radius-sm); font-weight: 600; text-decoration: none;
+            margin-top: 12px; transition: background var(--transition);
+        }
+        .cta-button:hover { background: var(--accent-hover); color: white; }
+        footer {
+            border-top: 1px solid var(--surface-border); padding: 40px 0; text-align: center;
+        }
+        .footer-links { display: flex; justify-content: center; gap: 24px; margin-bottom: 16px; flex-wrap: wrap; }
+        .footer-links a { color: var(--text-secondary); text-decoration: none; font-size: 0.88rem; }
+        .footer-links a:hover { color: var(--accent); }
+        .footer-copy { color: var(--text-tertiary); font-size: 0.8rem; }
+        @media (max-width: 640px) {
+            article { padding: 100px 0 60px; }
+            pre { padding: 14px; font-size: 0.75rem; }
+        }
+    </style>
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "Article",
+        "headline": "Find the Cheapest Hours to Charge Your EV in Germany",
+        "description": "How to automatically find the cheapest electricity hours to charge your EV in Germany using real-time EPEX Spot prices.",
+        "author": { "@type": "Person", "name": "Olalekan Elesin" },
+        "publisher": { "@type": "Organization", "name": "Energy MCP" },
+        "datePublished": "2026-07-19",
+        "dateModified": "2026-07-19"
+    }
+    </script>
+</head>
+<body>
+    <nav>
+        <div class="nav-inner">
+            <a href="/" class="nav-brand"><span>⚡</span> Energy MCP</a>
+            <div class="nav-links">
+                <a href="/blog/">Blog</a>
+                <a href="/#homeassistant">Home Assistant</a>
+                <a href="/#playground">Playground</a>
+            </div>
+        </div>
+    </nav>
+
+    <article>
+        <div class="container">
+            <p class="article-meta">July 19, 2026 · 5 min read</p>
+            <h1>Find the Cheapest Hours to Charge Your EV in Germany</h1>
+
+            <p>If you're on a dynamic electricity tariff in Germany — or thinking about switching to one — you already know the promise: charge your EV when spot prices are low, and save real money. The problem is <strong>finding those hours</strong>.</p>
+
+            <p>Electricity spot prices (EPEX Spot) change every hour. Tomorrow's prices are published at 14:00 CET. The cheapest hours shift daily depending on wind, solar, demand, and cross-border flows. Manually checking a price chart before bed every night is not a realistic long-term strategy.</p>
+
+            <h2>The Old Way: 50 Lines of YAML Templates</h2>
+
+            <p>If you use Home Assistant, the typical approach involves installing a price integration (Nordpool, ENTSO-E, or EPEX Spot via HACS), then writing complex Jinja templates to find the cheapest consecutive hours:</p>
+
+<pre><code>{% set prices = state_attr('sensor.nordpool', 'raw_today') + 
+   state_attr('sensor.nordpool', 'raw_tomorrow') %}
+{% set ns = namespace(best_start=none, best_avg=9999) %}
+{% for i in range(prices | length - duration + 1) %}
+  {% set window = prices[i:i+duration] %}
+  {% set avg = window | map(attribute='value') | sum / duration %}
+  {% if avg < ns.best_avg %}
+    {% set ns.best_avg = avg %}
+    {% set ns.best_start = window[0].start %}
+  {% endif %}
+{% endfor %}
+{{ ns.best_start }}</code></pre>
+
+            <p>This kind of template is fragile. It breaks at midnight when tomorrow's prices aren't available yet. It has timezone bugs during DST transitions. And it only tells you <em>when</em> to start — not how much it will cost.</p>
+
+            <h2>The New Way: One API Call</h2>
+
+            <p>Energy MCP provides a <code>find_cheapest_window</code> tool that does the same thing in a single request:</p>
+
+<pre><code>POST https://energy-mcp.getbrechtai.com/mcp
+
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "method": "tools/call",
+  "params": {
+    "name": "find_cheapest_window",
+    "arguments": {
+      "duration_hours": 3,
+      "consumption_kwh": 11
+    }
+  }
+}</code></pre>
+
+            <p>Response:</p>
+
+<pre><code>{
+  "duration_hours": 3,
+  "start": "2026-07-20T02:00:00+02:00",
+  "end": "2026-07-20T05:00:00+02:00",
+  "avg_price_ct_kwh": 4.07,
+  "total_cost_eur": 0.45,
+  "consumption_kwh": 11.0,
+  "prices": [...]
+}</code></pre>
+
+            <div class="callout">
+                <strong>What you get:</strong> The optimal start and end time, the average price during that window, and the estimated total cost for your charging session. Updated hourly with fresh EPEX Spot data.
+            </div>
+
+            <h2>How Much Can You Actually Save?</h2>
+
+            <p>On a typical German day, spot prices vary between 3–16 ct/kWh. If your EV needs 11 kWh (about 60 km of range), the difference between charging at the cheapest vs. most expensive hour can be <strong>€0.45 vs. €1.83</strong> — that's 4x.</p>
+
+            <p>Over a year of daily commute charging, optimizing your window can save <strong>€300–500</strong> compared to always charging at 6 PM when you get home (typically the most expensive hour).</p>
+
+            <h2>Use It in Home Assistant</h2>
+
+            <p>No custom integration needed. A command line sensor calls the API every 30 minutes:</p>
+
+<pre><code>command_line:
+  - sensor:
+      name: cheapest_ev_window
+      command: >
+        curl -s -X POST https://energy-mcp.getbrechtai.com/mcp
+        -H "Content-Type: application/json"
+        -H "Accept: application/json, text/event-stream"
+        -d '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"find_cheapest_window","arguments":{"duration_hours":3,"consumption_kwh":11}}}'
+        | grep "^data:" | sed 's/^data: //'
+      value_template: >
+        {{ (value_json.result.content[0].text | from_json).start }}
+      scan_interval: 1800</code></pre>
+
+            <p>Then trigger your wallbox with an automation:</p>
+
+<pre><code>automation:
+  - alias: "Start EV charging at cheapest window"
+    trigger:
+      - platform: template
+        value_template: >
+          {{ now().isoformat()[:16] ==
+             states('sensor.cheapest_ev_window')[:16] }}
+    action:
+      - service: switch.turn_on
+        target:
+          entity_id: switch.ev_charger</code></pre>
+
+            <h2>Use It with Any AI Agent</h2>
+
+            <p>Energy MCP speaks the <a href="https://modelcontextprotocol.io">Model Context Protocol</a>. Add it to Claude, Cursor, or any MCP-compatible client:</p>
+
+<pre><code>{
+  "mcpServers": {
+    "energy": {
+      "url": "https://energy-mcp.getbrechtai.com/mcp"
+    }
+  }
+}</code></pre>
+
+            <p>Then just ask: <em>"When should I charge my EV tonight? I need 3 hours for 11 kWh."</em></p>
+
+            <h2>How It Works Under the Hood</h2>
+
+            <p>Energy MCP fetches hourly day-ahead prices from <a href="https://www.awattar.de">aWATTar</a>, which provides free access to EPEX Spot market data for Germany. Prices for the next day are published daily at 14:00 CET.</p>
+
+            <p>The <code>find_cheapest_window</code> algorithm slides a window of N consecutive hours across all available prices (today + tomorrow = up to 48 hours), calculates the average price per window, and returns the window with the lowest average. Total cost is computed from your specified kWh consumption.</p>
+
+            <ul>
+                <li><strong>Data source:</strong> EPEX Spot via aWATTar (free, no API key)</li>
+                <li><strong>Update frequency:</strong> Hourly, with next-day prices from 14:00 CET</li>
+                <li><strong>Latency:</strong> ~10ms (Rust on AWS Lambda)</li>
+                <li><strong>Coverage:</strong> Germany and Austria</li>
+            </ul>
+
+            <h2>Beyond EV Charging</h2>
+
+            <p>The same <code>find_cheapest_window</code> tool works for any flexible load:</p>
+
+            <ul>
+                <li><strong>Heat pump:</strong> <code>duration_hours: 4, consumption_kwh: 8</code></li>
+                <li><strong>Dishwasher:</strong> <code>duration_hours: 2, consumption_kwh: 1.5</code></li>
+                <li><strong>Washing machine:</strong> <code>duration_hours: 2, consumption_kwh: 2</code></li>
+                <li><strong>Battery storage:</strong> <code>duration_hours: 5, consumption_kwh: 10</code></li>
+            </ul>
+
+            <div class="cta-box">
+                <h3>Try it now</h3>
+                <p>Hit the playground on our landing page — no signup, no API key.</p>
+                <a href="/#playground" class="cta-button">Open Playground →</a>
+            </div>
+        </div>
+    </article>
+
+    <footer>
+        <div class="container">
+            <div class="footer-links">
+                <a href="/blog/">Blog</a>
+                <a href="/#homeassistant">Home Assistant</a>
+                <a href="https://github.com/OElesin/energy-mcp" target="_blank">GitHub</a>
+            </div>
+            <p class="footer-copy">Energy MCP — European energy prices for AI agents.</p>
+        </div>
+    </footer>
+</body>
+</html>

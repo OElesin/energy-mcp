@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Home Assistant Electricity Prices Without a Custom Integration — Energy MCP</title>
+    <meta name="description" content="Get real-time EPEX Spot electricity prices in Home Assistant without HACS, custom components, or fragile integrations. Just YAML and a free API.">
+    <meta name="keywords" content="home assistant electricity price, home assistant EPEX spot, home assistant cheapest hours, home assistant nordpool alternative, home assistant energy automation">
+    <link rel="canonical" href="https://energy-mcp.getbrechtai.com/blog/home-assistant-electricity-prices-no-integration.html">
+    <meta property="og:title" content="Home Assistant Electricity Prices Without a Custom Integration">
+    <meta property="og:description" content="Get real-time EPEX Spot prices in HA without HACS or custom components. Just YAML and a free API.">
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="https://energy-mcp.getbrechtai.com/blog/home-assistant-electricity-prices-no-integration.html">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Home Assistant Electricity Prices Without a Custom Integration">
+    <meta name="twitter:description" content="Get real-time EPEX Spot prices in HA without HACS or custom components. Just YAML and a free API.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script async src="https://plausible.io/js/pa-tCq8S1usMostRo3GHtETW.js"></script>
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        :root {
+            --bg: #ffffff; --surface: #f8fafc; --surface-border: #e2e8f0;
+            --text: #0f172a; --text-secondary: #475569; --text-tertiary: #64748b;
+            --accent: #059669; --accent-light: #d1fae5; --accent-hover: #047857;
+            --code-bg: #1e293b; --code-text: #e2e8f0;
+            --radius: 14px; --radius-sm: 8px; --transition: 0.2s ease;
+        }
+        html { scroll-behavior: smooth; }
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg); color: var(--text); line-height: 1.8;
+            -webkit-font-smoothing: antialiased;
+        }
+        .container { max-width: 740px; margin: 0 auto; padding: 0 24px; }
+        nav {
+            position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+            background: rgba(255,255,255,0.9); backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--surface-border);
+        }
+        nav .nav-inner {
+            max-width: 740px; margin: 0 auto; padding: 0 24px;
+            display: flex; align-items: center; justify-content: space-between; height: 64px;
+        }
+        .nav-brand {
+            font-weight: 700; font-size: 1.1rem; color: var(--text);
+            text-decoration: none; display: flex; align-items: center; gap: 8px;
+        }
+        .nav-brand span { font-size: 1.3rem; }
+        .nav-links { display: flex; gap: 20px; }
+        .nav-links a { color: var(--text-secondary); text-decoration: none; font-size: 0.88rem; font-weight: 500; }
+        .nav-links a:hover { color: var(--accent); }
+        article { padding: 120px 0 80px; }
+        .article-meta { color: var(--text-tertiary); font-size: 0.85rem; margin-bottom: 16px; }
+        h1 { font-size: clamp(1.8rem, 4vw, 2.4rem); font-weight: 800; letter-spacing: -0.03em; line-height: 1.2; margin-bottom: 24px; }
+        h2 { font-size: 1.4rem; font-weight: 700; margin: 48px 0 16px; letter-spacing: -0.02em; }
+        h3 { font-size: 1.1rem; font-weight: 600; margin: 32px 0 12px; }
+        p { margin-bottom: 20px; color: var(--text-secondary); }
+        strong { color: var(--text); }
+        ul, ol { margin: 0 0 20px 20px; color: var(--text-secondary); }
+        li { margin-bottom: 8px; }
+        a { color: var(--accent); }
+        pre {
+            background: var(--code-bg); border-radius: var(--radius-sm); padding: 20px;
+            overflow-x: auto; margin: 0 0 24px; font-family: 'SF Mono', 'Fira Code', monospace;
+            font-size: 0.82rem; color: var(--code-text); line-height: 1.7;
+        }
+        code {
+            font-family: 'SF Mono', 'Fira Code', monospace; font-size: 0.85em;
+            background: var(--surface); padding: 2px 6px; border-radius: 4px; color: var(--accent);
+        }
+        pre code { background: none; padding: 0; color: inherit; font-size: inherit; }
+        .callout {
+            background: var(--accent-light); border: 1px solid var(--accent);
+            border-radius: var(--radius-sm); padding: 16px 20px; margin: 24px 0;
+            font-size: 0.92rem; color: var(--text);
+        }
+        .warning {
+            background: #fef3c7; border: 1px solid #f59e0b;
+            border-radius: var(--radius-sm); padding: 16px 20px; margin: 24px 0;
+            font-size: 0.92rem; color: var(--text);
+        }
+        .comparison-table {
+            width: 100%; border-collapse: collapse; margin: 24px 0; font-size: 0.88rem;
+        }
+        .comparison-table th, .comparison-table td {
+            padding: 12px 16px; text-align: left; border-bottom: 1px solid var(--surface-border);
+        }
+        .comparison-table th { font-weight: 600; color: var(--text); background: var(--surface); }
+        .comparison-table td { color: var(--text-secondary); }
+        .cta-box {
+            background: var(--surface); border: 1px solid var(--surface-border);
+            border-radius: var(--radius); padding: 32px; text-align: center; margin: 48px 0;
+        }
+        .cta-box h3 { margin-top: 0; }
+        .cta-button {
+            display: inline-block; padding: 12px 28px; background: var(--accent); color: white;
+            border-radius: var(--radius-sm); font-weight: 600; text-decoration: none;
+            margin-top: 12px; transition: background var(--transition);
+        }
+        .cta-button:hover { background: var(--accent-hover); color: white; }
+        footer {
+            border-top: 1px solid var(--surface-border); padding: 40px 0; text-align: center;
+        }
+        .footer-links { display: flex; justify-content: center; gap: 24px; margin-bottom: 16px; flex-wrap: wrap; }
+        .footer-links a { color: var(--text-secondary); text-decoration: none; font-size: 0.88rem; }
+        .footer-links a:hover { color: var(--accent); }
+        .footer-copy { color: var(--text-tertiary); font-size: 0.8rem; }
+        @media (max-width: 640px) {
+            article { padding: 100px 0 60px; }
+            pre { padding: 14px; font-size: 0.75rem; }
+            .comparison-table { font-size: 0.8rem; }
+            .comparison-table th, .comparison-table td { padding: 8px 10px; }
+        }
+    </style>
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "Article",
+        "headline": "Home Assistant Electricity Prices Without a Custom Integration",
+        "description": "Get real-time EPEX Spot electricity prices in Home Assistant without HACS, custom components, or fragile integrations.",
+        "author": { "@type": "Person", "name": "Olalekan Elesin" },
+        "publisher": { "@type": "Organization", "name": "Energy MCP" },
+        "datePublished": "2026-07-19",
+        "dateModified": "2026-07-19"
+    }
+    </script>
+</head>
+<body>
+    <nav>
+        <div class="nav-inner">
+            <a href="/" class="nav-brand"><span>⚡</span> Energy MCP</a>
+            <div class="nav-links">
+                <a href="/blog/">Blog</a>
+                <a href="/#homeassistant">Home Assistant</a>
+                <a href="/#playground">Playground</a>
+            </div>
+        </div>
+    </nav>
+
+    <article>
+        <div class="container">
+            <p class="article-meta">July 19, 2026 · 7 min read</p>
+            <h1>Home Assistant Electricity Prices Without a Custom Integration</h1>
+
+            <p>Every Home Assistant user on a dynamic electricity tariff eventually needs the same thing: <strong>real-time spot prices as a sensor</strong>. And every one of them hits the same problems.</p>
+
+            <h2>The Problem with Existing Integrations</h2>
+
+            <p>The common options — Nordpool, ENTSO-E, EPEX Spot via HACS — all share the same architectural weakness: they run <em>inside</em> your Home Assistant Python process.</p>
+
+            <div class="warning">
+                <strong>⚠️ Common complaints:</strong> "ENTSO-E completely hangs the system — no web UI, had to SSH in." / "Nordpool entities frequently become unavailable." / "Every HA supervisor update breaks Nordpool until I restart."
+            </div>
+
+            <p>When these integrations crash, they can take your entire smart home with them. And because they're community-maintained HACS plugins, there's no SLA on fixes.</p>
+
+            <table class="comparison-table">
+                <thead>
+                    <tr>
+                        <th>Integration</th>
+                        <th>Runs in HA?</th>
+                        <th>Can crash HA?</th>
+                        <th>Cheapest window?</th>
+                        <th>Cost estimate?</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Nordpool (HACS)</td>
+                        <td>Yes</td>
+                        <td>Yes</td>
+                        <td>No (need separate macro)</td>
+                        <td>No</td>
+                    </tr>
+                    <tr>
+                        <td>ENTSO-E (HACS)</td>
+                        <td>Yes</td>
+                        <td>Yes (known hangs)</td>
+                        <td>No</td>
+                        <td>No</td>
+                    </tr>
+                    <tr>
+                        <td>EPEX Spot (HACS)</td>
+                        <td>Yes</td>
+                        <td>Yes</td>
+                        <td>No</td>
+                        <td>No</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Energy MCP</strong></td>
+                        <td><strong>No (external)</strong></td>
+                        <td><strong>No</strong></td>
+                        <td><strong>Yes (built-in)</strong></td>
+                        <td><strong>Yes</strong></td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h2>The Approach: External API, Built-in Sensor</h2>
+
+            <p>Energy MCP runs on AWS Lambda, completely outside your Home Assistant instance. You query it using HA's built-in <code>command_line</code> sensor — no HACS, no custom component, no Python dependencies.</p>
+
+            <p>If our server has an issue, your sensor just shows <code>unavailable</code>. Your HA instance stays up. Your automations keep running.</p>
+
+            <h2>Sensor 1: Current Electricity Price Stats</h2>
+
+            <p>Get the average, minimum, and maximum spot price for today, plus which hours are cheapest and most expensive:</p>
+
+<pre><code>command_line:
+  - sensor:
+      name: electricity_price_stats
+      command: >
+        curl -s -X POST https://energy-mcp.getbrechtai.com/mcp
+        -H "Content-Type: application/json"
+        -H "Accept: application/json, text/event-stream"
+        -d '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"get_price_stats","arguments":{}}}'
+        | grep "^data:" | sed 's/^data: //'
+      value_template: >
+        {{ (value_json.result.content[0].text | from_json).stats.avg_ct_kwh | round(2) }}
+      unit_of_measurement: "ct/kWh"
+      scan_interval: 900</code></pre>
+
+            <p>This gives you a sensor with the current average price as its state. Every 15 minutes it refreshes.</p>
+
+            <h2>Sensor 2: Cheapest EV Charging Window</h2>
+
+            <p>This is the one everyone wants. It finds the optimal consecutive hours to charge, and tells you the cost:</p>
+
+<pre><code>command_line:
+  - sensor:
+      name: cheapest_ev_window
+      command: >
+        curl -s -X POST https://energy-mcp.getbrechtai.com/mcp
+        -H "Content-Type: application/json"
+        -H "Accept: application/json, text/event-stream"
+        -d '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"find_cheapest_window","arguments":{"duration_hours":3,"consumption_kwh":11}}}'
+        | grep "^data:" | sed 's/^data: //'
+      value_template: >
+        {{ (value_json.result.content[0].text | from_json).start }}
+      scan_interval: 1800</code></pre>
+
+            <p>The sensor state is the optimal start time (e.g., <code>2026-07-20T02:00:00+02:00</code>). Attributes include <code>avg_price_ct_kwh</code>, <code>total_cost_eur</code>, and <code>end</code> time.</p>
+
+            <div class="callout">
+                <strong>Customize it:</strong> Change <code>duration_hours</code> and <code>consumption_kwh</code> to match your appliance. EV: 3h/11kWh. Heat pump: 4h/8kWh. Dishwasher: 2h/1.5kWh.
+            </div>
+
+            <h2>Sensor 3: Grid Carbon Intensity</h2>
+
+            <p>Want to know if the grid is running clean right now? This sensor shows grams of CO₂ per kWh:</p>
+
+<pre><code>command_line:
+  - sensor:
+      name: grid_carbon_intensity
+      command: >
+        curl -s -X POST https://energy-mcp.getbrechtai.com/mcp
+        -H "Content-Type: application/json"
+        -H "Accept: application/json, text/event-stream"
+        -d '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"get_carbon_intensity","arguments":{"country":"DE"}}}'
+        | grep "^data:" | sed 's/^data: //'
+      value_template: >
+        {{ (value_json.result.content[0].text | from_json).carbon_intensity_gco2_kwh | round(0) }}
+      unit_of_measurement: "gCO₂/kWh"
+      scan_interval: 1800</code></pre>
+
+            <p>Use this to run flexible loads during clean hours — when wind and solar are high, carbon intensity drops below 200 gCO₂/kWh.</p>
+
+            <h2>Automation: Start Charging at the Cheapest Time</h2>
+
+            <p>Combine the cheapest window sensor with a switch to automate your wallbox:</p>
+
+<pre><code>automation:
+  - alias: "Start EV charging at cheapest window"
+    trigger:
+      - platform: template
+        value_template: >
+          {{ now().isoformat()[:16] ==
+             states('sensor.cheapest_ev_window')[:16] }}
+    action:
+      - service: switch.turn_on
+        target:
+          entity_id: switch.ev_charger
+      - service: notify.mobile_app
+        data:
+          title: "⚡ EV charging started"
+          message: >
+            Charging now — estimated cost: €{{ state_attr('sensor.cheapest_ev_window', 'total_cost_eur') }}
+
+  - alias: "Stop EV charging after window"
+    trigger:
+      - platform: template
+        value_template: >
+          {{ now().isoformat()[:16] ==
+             (state_attr('sensor.cheapest_ev_window', 'end'))[:16] }}
+    action:
+      - service: switch.turn_off
+        target:
+          entity_id: switch.ev_charger</code></pre>
+
+            <h2>Why This Works Better</h2>
+
+            <ul>
+                <li><strong>No HACS dependency:</strong> Uses only built-in HA components (<code>command_line</code>, <code>automation</code>).</li>
+                <li><strong>Can't crash HA:</strong> External API call. If it fails, sensor goes unavailable — nothing else breaks.</li>
+                <li><strong>Cheapest window built-in:</strong> No separate Jinja macro, no template debugging, no DST bugs.</li>
+                <li><strong>Cost estimate included:</strong> Know what you'll pay, not just when to run.</li>
+                <li><strong>No API key needed:</strong> Free tier gives you 50 requests/day — enough for 3 sensors updating every 30 minutes.</li>
+                <li><strong>Always current data:</strong> Prices update hourly from EPEX Spot. Next-day prices available from 14:00 CET.</li>
+            </ul>
+
+            <h2>Rate Limits and Fair Use</h2>
+
+            <p>The free tier allows 50 requests per day per IP. Three sensors updating every 30 minutes = 144 requests/day, which exceeds the limit. Here's how to handle it:</p>
+
+            <ul>
+                <li>Set <code>scan_interval: 3600</code> (hourly) instead of 1800 — 3 sensors × 24 hours = 72 requests. Still over, but close.</li>
+                <li>Better: consolidate to 2 sensors with <code>scan_interval: 1800</code> = 96 requests. Use the <code>get_price_stats</code> sensor (it includes min/max hours).</li>
+                <li>Best: <a href="mailto:elesin.olalekan@gmail.com?subject=Energy%20MCP%20API%20Key%20Request">get a Pro API key</a> — 10,000 requests/day for production use.</li>
+            </ul>
+
+            <h2>Available Tools</h2>
+
+            <p>Beyond the sensors shown above, Energy MCP provides 11 tools you can query from HA:</p>
+
+            <ul>
+                <li><code>get_spot_prices</code> — hourly EPEX Spot prices (up to 48h ahead)</li>
+                <li><code>get_price_forecast</code> — tomorrow's day-ahead prices</li>
+                <li><code>get_price_stats</code> — average, min, max, cheapest/expensive hours</li>
+                <li><code>find_cheapest_window</code> — optimal time window + cost estimate</li>
+                <li><code>compare_tariffs</code> — dynamic vs. fixed tariff comparison</li>
+                <li><code>calculate_energy_cost</code> — cost of X kWh at current prices</li>
+                <li><code>analyze_price_trends</code> — weekly trends and volatility</li>
+                <li><code>search_energy_prices</code> — spot prices for 25+ EU countries</li>
+                <li><code>get_generation_mix</code> — real-time solar/wind/gas/nuclear breakdown</li>
+                <li><code>get_carbon_intensity</code> — gCO₂/kWh from generation mix</li>
+                <li><code>get_gas_prices</code> — TTF Dutch benchmark gas prices</li>
+            </ul>
+
+            <div class="cta-box">
+                <h3>Try it before you configure</h3>
+                <p>Test any tool in the browser playground — see exactly what the response looks like.</p>
+                <a href="/#playground" class="cta-button">Open Playground →</a>
+            </div>
+        </div>
+    </article>
+
+    <footer>
+        <div class="container">
+            <div class="footer-links">
+                <a href="/blog/">Blog</a>
+                <a href="/#homeassistant">Home Assistant</a>
+                <a href="https://github.com/OElesin/energy-mcp" target="_blank">GitHub</a>
+            </div>
+            <p class="footer-copy">Energy MCP — European energy prices for AI agents.</p>
+        </div>
+    </footer>
+</body>
+</html>

@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Real-Time Carbon Intensity of Electricity in Germany — Energy MCP</title>
+    <meta name="description" content="Track the real-time carbon intensity (gCO2/kWh) of Germany's electricity grid. See the generation mix and find the greenest hours to run your appliances.">
+    <meta name="keywords" content="carbon intensity germany, grid CO2 germany, green electricity hours, Strommix Deutschland, carbon intensity API, gCO2 kWh germany">
+    <link rel="canonical" href="https://energy-mcp.getbrechtai.com/blog/carbon-intensity-germany-real-time.html">
+    <meta property="og:title" content="Real-Time Carbon Intensity of Electricity in Germany">
+    <meta property="og:description" content="Track gCO2/kWh live. See the generation mix (solar, wind, gas, coal) and find the greenest hours.">
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="https://energy-mcp.getbrechtai.com/blog/carbon-intensity-germany-real-time.html">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Real-Time Carbon Intensity of Electricity in Germany">
+    <meta name="twitter:description" content="Track gCO2/kWh live. See the generation mix and find the greenest hours.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script async src="https://plausible.io/js/pa-tCq8S1usMostRo3GHtETW.js"></script>
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        :root {
+            --bg: #ffffff; --surface: #f8fafc; --surface-border: #e2e8f0;
+            --text: #0f172a; --text-secondary: #475569; --text-tertiary: #64748b;
+            --accent: #059669; --accent-light: #d1fae5; --accent-hover: #047857;
+            --code-bg: #1e293b; --code-text: #e2e8f0;
+            --radius: 14px; --radius-sm: 8px; --transition: 0.2s ease;
+        }
+        html { scroll-behavior: smooth; }
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg); color: var(--text); line-height: 1.8;
+            -webkit-font-smoothing: antialiased;
+        }
+        .container { max-width: 740px; margin: 0 auto; padding: 0 24px; }
+        nav {
+            position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+            background: rgba(255,255,255,0.9); backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--surface-border);
+        }
+        nav .nav-inner {
+            max-width: 740px; margin: 0 auto; padding: 0 24px;
+            display: flex; align-items: center; justify-content: space-between; height: 64px;
+        }
+        .nav-brand {
+            font-weight: 700; font-size: 1.1rem; color: var(--text);
+            text-decoration: none; display: flex; align-items: center; gap: 8px;
+        }
+        .nav-brand span { font-size: 1.3rem; }
+        .nav-links { display: flex; gap: 20px; }
+        .nav-links a { color: var(--text-secondary); text-decoration: none; font-size: 0.88rem; font-weight: 500; }
+        .nav-links a:hover { color: var(--accent); }
+        article { padding: 120px 0 80px; }
+        .article-meta { color: var(--text-tertiary); font-size: 0.85rem; margin-bottom: 16px; }
+        h1 { font-size: clamp(1.8rem, 4vw, 2.4rem); font-weight: 800; letter-spacing: -0.03em; line-height: 1.2; margin-bottom: 24px; }
+        h2 { font-size: 1.4rem; font-weight: 700; margin: 48px 0 16px; letter-spacing: -0.02em; }
+        h3 { font-size: 1.1rem; font-weight: 600; margin: 32px 0 12px; }
+        p { margin-bottom: 20px; color: var(--text-secondary); }
+        strong { color: var(--text); }
+        ul, ol { margin: 0 0 20px 20px; color: var(--text-secondary); }
+        li { margin-bottom: 8px; }
+        a { color: var(--accent); }
+        pre {
+            background: var(--code-bg); border-radius: var(--radius-sm); padding: 20px;
+            overflow-x: auto; margin: 0 0 24px; font-family: 'SF Mono', 'Fira Code', monospace;
+            font-size: 0.82rem; color: var(--code-text); line-height: 1.7;
+        }
+        code {
+            font-family: 'SF Mono', 'Fira Code', monospace; font-size: 0.85em;
+            background: var(--surface); padding: 2px 6px; border-radius: 4px; color: var(--accent);
+        }
+        pre code { background: none; padding: 0; color: inherit; font-size: inherit; }
+        .callout {
+            background: var(--accent-light); border: 1px solid var(--accent);
+            border-radius: var(--radius-sm); padding: 16px 20px; margin: 24px 0;
+            font-size: 0.92rem; color: var(--text);
+        }
+        .emission-table {
+            width: 100%; border-collapse: collapse; margin: 24px 0; font-size: 0.88rem;
+        }
+        .emission-table th, .emission-table td {
+            padding: 10px 16px; text-align: left; border-bottom: 1px solid var(--surface-border);
+        }
+        .emission-table th { font-weight: 600; color: var(--text); background: var(--surface); }
+        .emission-table td { color: var(--text-secondary); }
+        .cta-box {
+            background: var(--surface); border: 1px solid var(--surface-border);
+            border-radius: var(--radius); padding: 32px; text-align: center; margin: 48px 0;
+        }
+        .cta-box h3 { margin-top: 0; }
+        .cta-button {
+            display: inline-block; padding: 12px 28px; background: var(--accent); color: white;
+            border-radius: var(--radius-sm); font-weight: 600; text-decoration: none;
+            margin-top: 12px; transition: background var(--transition);
+        }
+        .cta-button:hover { background: var(--accent-hover); color: white; }
+        footer {
+            border-top: 1px solid var(--surface-border); padding: 40px 0; text-align: center;
+        }
+        .footer-links { display: flex; justify-content: center; gap: 24px; margin-bottom: 16px; flex-wrap: wrap; }
+        .footer-links a { color: var(--text-secondary); text-decoration: none; font-size: 0.88rem; }
+        .footer-links a:hover { color: var(--accent); }
+        .footer-copy { color: var(--text-tertiary); font-size: 0.8rem; }
+        @media (max-width: 640px) {
+            article { padding: 100px 0 60px; }
+            pre { padding: 14px; font-size: 0.75rem; }
+        }
+    </style>
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "Article",
+        "headline": "Real-Time Carbon Intensity of Electricity in Germany",
+        "description": "Track the real-time carbon intensity (gCO2/kWh) of Germany's electricity grid and find the greenest hours.",
+        "author": { "@type": "Person", "name": "Olalekan Elesin" },
+        "publisher": { "@type": "Organization", "name": "Energy MCP" },
+        "datePublished": "2026-07-19",
+        "dateModified": "2026-07-19"
+    }
+    </script>
+</head>
+<body>
+    <nav>
+        <div class="nav-inner">
+            <a href="/" class="nav-brand"><span>⚡</span> Energy MCP</a>
+            <div class="nav-links">
+                <a href="/blog/">Blog</a>
+                <a href="/#homeassistant">Home Assistant</a>
+                <a href="/#playground">Playground</a>
+            </div>
+        </div>
+    </nav>
+
+    <article>
+        <div class="container">
+            <p class="article-meta">July 19, 2026 · 6 min read</p>
+            <h1>Real-Time Carbon Intensity of Electricity in Germany</h1>
+
+            <p>Not all kilowatt-hours are created equal. At noon on a sunny, windy day, German electricity can be <strong>under 150 gCO₂/kWh</strong> — cleaner than France's nuclear-heavy grid. At 6 PM on a calm winter evening, it can spike above <strong>500 gCO₂/kWh</strong> as gas and coal plants ramp up to meet demand.</p>
+
+            <p>If you care about reducing your carbon footprint — or just want to run your EV, heat pump, or washing machine on the cleanest electricity — you need to know <em>when</em> the grid is green.</p>
+
+            <h2>What Is Carbon Intensity?</h2>
+
+            <p>Carbon intensity measures how many grams of CO₂ are emitted for each kilowatt-hour of electricity generated. It depends on the <strong>generation mix</strong> — what percentage comes from solar, wind, gas, coal, nuclear, and other sources.</p>
+
+            <table class="emission-table">
+                <thead>
+                    <tr>
+                        <th>Source</th>
+                        <th>gCO₂/kWh</th>
+                        <th>Type</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr><td>Wind (onshore/offshore)</td><td>11</td><td>Renewable</td></tr>
+                    <tr><td>Nuclear</td><td>12</td><td>Low-carbon</td></tr>
+                    <tr><td>Hydro</td><td>24</td><td>Renewable</td></tr>
+                    <tr><td>Solar</td><td>45</td><td>Renewable</td></tr>
+                    <tr><td>Biomass</td><td>230</td><td>Renewable</td></tr>
+                    <tr><td>Natural gas</td><td>490</td><td>Fossil</td></tr>
+                    <tr><td>Oil</td><td>650</td><td>Fossil</td></tr>
+                    <tr><td>Coal (hard coal + lignite)</td><td>820</td><td>Fossil</td></tr>
+                </tbody>
+            </table>
+
+            <p>Germany's grid-average carbon intensity typically ranges between <strong>200–500 gCO₂/kWh</strong>, depending on the time of day, weather, and season. In 2025, the annual average was approximately 350 gCO₂/kWh.</p>
+
+            <h2>Querying Carbon Intensity via API</h2>
+
+            <p>Energy MCP calculates carbon intensity in real-time from the actual generation mix reported by ENTSO-E. One API call:</p>
+
+<pre><code>POST https://energy-mcp.getbrechtai.com/mcp
+
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "method": "tools/call",
+  "params": {
+    "name": "get_carbon_intensity",
+    "arguments": { "country": "DE" }
+  }
+}</code></pre>
+
+            <p>Example response:</p>
+
+<pre><code>{
+  "country": "DE",
+  "carbon_intensity_gco2_kwh": 287,
+  "rating": "moderate",
+  "generation_mix": {
+    "wind": 31.2,
+    "solar": 22.4,
+    "gas": 18.1,
+    "coal": 12.3,
+    "nuclear": 0.0,
+    "hydro": 4.2,
+    "biomass": 8.1,
+    "other": 3.7
+  },
+  "renewable_share_pct": 65.9,
+  "fossil_share_pct": 30.4,
+  "timestamp": "2026-07-19T14:00:00+02:00"
+}</code></pre>
+
+            <div class="callout">
+                <strong>Rating scale:</strong> "very_low" (&lt;150), "low" (150–250), "moderate" (250–350), "high" (350–500), "very_high" (&gt;500 gCO₂/kWh)
+            </div>
+
+            <h2>When Is the Grid Greenest?</h2>
+
+            <p>In Germany, the patterns are predictable:</p>
+
+            <ul>
+                <li><strong>Midday (10:00–15:00):</strong> Solar peaks. On sunny days, carbon intensity can drop below 200 gCO₂/kWh.</li>
+                <li><strong>Night with wind (00:00–06:00):</strong> If wind is strong, overnight carbon intensity stays low despite no solar.</li>
+                <li><strong>Evening peak (17:00–20:00):</strong> Solar drops, demand rises, gas plants ramp up. Typically the dirtiest hours.</li>
+                <li><strong>Weekends:</strong> Lower industrial demand means less fossil generation needed.</li>
+            </ul>
+
+            <p>The key insight: <strong>the cheapest hours and the greenest hours often overlap</strong>. When renewables are abundant, supply exceeds demand, driving prices down AND carbon intensity down. This means optimizing for cost often automatically optimizes for carbon too.</p>
+
+            <h2>Generation Mix: See What's Powering the Grid</h2>
+
+            <p>For a deeper look, the <code>get_generation_mix</code> tool shows the full breakdown:</p>
+
+<pre><code>{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "method": "tools/call",
+  "params": {
+    "name": "get_generation_mix",
+    "arguments": { "country": "DE" }
+  }
+}</code></pre>
+
+            <p>This returns each source's percentage contribution and absolute generation in MW. Useful for dashboards, reporting, or deciding whether to export your home battery.</p>
+
+            <h2>Use in Home Assistant</h2>
+
+            <p>Track carbon intensity as a sensor and use it in automations:</p>
+
+<pre><code>command_line:
+  - sensor:
+      name: grid_carbon_intensity
+      command: >
+        curl -s -X POST https://energy-mcp.getbrechtai.com/mcp
+        -H "Content-Type: application/json"
+        -H "Accept: application/json, text/event-stream"
+        -d '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"get_carbon_intensity","arguments":{"country":"DE"}}}'
+        | grep "^data:" | sed 's/^data: //'
+      value_template: >
+        {{ (value_json.result.content[0].text | from_json).carbon_intensity_gco2_kwh | round(0) }}
+      unit_of_measurement: "gCO₂/kWh"
+      scan_interval: 1800</code></pre>
+
+            <h3>Automation: Run Washing Machine Only When Grid Is Green</h3>
+
+<pre><code>automation:
+  - alias: "Notify when grid is green"
+    trigger:
+      - platform: numeric_state
+        entity_id: sensor.grid_carbon_intensity
+        below: 200
+    condition:
+      - condition: time
+        after: "08:00:00"
+        before: "22:00:00"
+    action:
+      - service: notify.mobile_app
+        data:
+          title: "🌱 Grid is green right now"
+          message: >
+            Carbon intensity: {{ states('sensor.grid_carbon_intensity') }} gCO₂/kWh.
+            Good time to run the washing machine or dishwasher!</code></pre>
+
+            <h2>Multi-Country Support</h2>
+
+            <p>Carbon intensity varies dramatically across Europe. Energy MCP supports all major European countries:</p>
+
+            <ul>
+                <li><strong>France (FR):</strong> ~60 gCO₂/kWh (nuclear-dominated)</li>
+                <li><strong>Germany (DE):</strong> ~200–500 gCO₂/kWh (weather-dependent)</li>
+                <li><strong>Poland (PL):</strong> ~600–800 gCO₂/kWh (coal-heavy)</li>
+                <li><strong>Norway (NO):</strong> ~20 gCO₂/kWh (almost 100% hydro)</li>
+                <li><strong>Netherlands (NL):</strong> ~300–450 gCO₂/kWh (gas-heavy)</li>
+            </ul>
+
+            <p>Change the <code>country</code> parameter to any supported code: DE, FR, NL, BE, AT, ES, PT, IT, CH, PL, CZ, DK, NO, SE, FI, EE, LV, LT, HU, RO, BG, GR, IE, GB.</p>
+
+            <h2>Combining Price + Carbon Optimization</h2>
+
+            <p>The holy grail of energy-aware automation is scheduling loads during hours that are <em>both</em> cheap and green. With Energy MCP, you have both data points in the same server:</p>
+
+            <ol>
+                <li>Query <code>find_cheapest_window</code> to get the optimal time for your appliance</li>
+                <li>Query <code>get_carbon_intensity</code> at that hour to verify it's also clean</li>
+                <li>If carbon is too high, consider waiting for the next window</li>
+            </ol>
+
+            <p>Or let an AI agent reason across both tools simultaneously — that's what the MCP protocol enables. Ask Claude: <em>"When should I charge my EV tonight if I want it both cheap and low-carbon?"</em></p>
+
+            <div class="cta-box">
+                <h3>Check it live</h3>
+                <p>See Germany's current carbon intensity and generation mix in the playground.</p>
+                <a href="/#playground" class="cta-button">Open Playground →</a>
+            </div>
+        </div>
+    </article>
+
+    <footer>
+        <div class="container">
+            <div class="footer-links">
+                <a href="/blog/">Blog</a>
+                <a href="/#homeassistant">Home Assistant</a>
+                <a href="https://github.com/OElesin/energy-mcp" target="_blank">GitHub</a>
+            </div>
+            <p class="footer-copy">Energy MCP — European energy prices for AI agents.</p>
+        </div>
+    </footer>
+</body>
+</html>
